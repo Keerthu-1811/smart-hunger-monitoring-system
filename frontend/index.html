@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Hunger Monitoring</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Smart Hunger Monitoring Dashboard</h1>
+    </header>
+
+    <main>
+        <div class="top-panels">
+            <section class="panel alerts-panel">
+                <h2>⚠️ System Alerts</h2>
+                <ul id="alertsList"><li>Loading alerts...</li></ul>
+            </section>
+            
+            <section class="panel redist-panel">
+                <h2>🔄 Redistribution Recommendations</h2>
+                <ul id="redistList"><li>Loading recommendations...</li></ul>
+            </section>
+        </div>
+
+        <section class="panel stock-panel">
+            <h2>📊 Center Comparison</h2>
+            <div id="centersTableContainer" class="table-responsive">
+                <p>Loading comparison table...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

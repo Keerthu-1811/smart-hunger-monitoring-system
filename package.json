@@ -1,0 +1,26 @@
+{
+  "name": "smart-hunger-iot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "seed": "node backend/seed.js",
+    "demo": "node backend/demo_seed.js",
+    "simulate-shortage": "node backend/simulate_shortage_b.js",
+    "apply-redistribution": "node backend/apply_redistribution.js",
+    "inject-live": "node backend/inject_live.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.99.0",
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  }
+}

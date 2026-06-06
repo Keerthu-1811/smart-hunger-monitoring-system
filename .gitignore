@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Environment configurations and secrets
+backend/.env
+.env
+
+# Editor settings
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,294 @@
+================================================================================
+              SMART HUNGER MONITORING SYSTEM - PROJECT REPORT
+================================================================================
+
+
+1. SYSTEM ARCHITECTURE / BLOCK DIAGRAM
+================================================================================
+
+1.1 Block Diagram
+-----------------
+
+  +------------------+        Wi-Fi (HTTP POST)        +------------------+
+  |   ESP8266 Node   | ------------------------------>  |  Node.js Backend |
+  |  (Microcontroller)|    JSON: {device_id,           |  (Express Server)|
+  |                  |     total_weight,               |  Port 3000       |
+  |  [Button 1: Add] |     consumed_weight,            |                  |
+  |  [Button 2: Sub] |     weight}                     +--------+---------+
+  +------------------+                                          |
+                                                                | Supabase JS SDK
+                                                                | (HTTPS REST API)
+                                                                v
+                                                    +---------------------+
+                                                    |    Supabase Cloud   |
+                                                    |    (PostgreSQL DB)  |
+                                                    |                     |
+                                                    |  Table:             |
+                                                    |  Food_Stock_Data    |
+                                                    +----------+----------+
+                                                               |
+                                              Fetch via REST   |
+                                              (GET /api/data)  |
+                                                               v
+  +------------------+       HTTP Fetch (5s poll)    +------------------+
+  |  Web Browser     | <---------------------------- |  Node.js Backend |
+  |  (Frontend       |    JSON: {centers, alerts,    |  (Same server)   |
+  |   Dashboard)     |     redistributions}          |                  |
+  |  Port 5000       |                               +------------------+
+  +------------------+
+
+
+1.2 Component Descriptions
+--------------------------
+
+a) ESP8266 Microcontroller Node:
+   - The edge device deployed at each food distribution center.
+   - Equipped with two physical push buttons:
+     * Button 1 (D5): "Add Stock" - Adds a specified weight (10 kg) to the
+       daily total stock pool each time it is pressed.
+     * Button 2 (D6): "Consume Stock" - Simulates stock removal by adding
+       a specified weight (5 kg) to the total consumed tally.
+   - Calculates remaining weight as: remaining = total_stock - total_consumed.
+   - Sends data over Wi-Fi as an HTTP POST (JSON) to the local Node.js server.
+   - Implements software debouncing (200 ms) to prevent duplicate triggers.
+
+b) Node.js Backend Server (Express.js):
+   - Acts as a middleware proxy between the ESP8266 and Supabase cloud.
+   - Exposes two REST API endpoints:
+     * POST /api/fooddata: Receives sensor data from ESP8266 and inserts it
+       into the Supabase PostgreSQL database.
+     * GET /api/data: Fetches all records from the last 24 hours, groups them
+       by device_id, and computes analytics including:
+       - Current consumption rate (difference between last two readings)
+       - 24-hour average consumption rate
+       - Dynamic hunger risk level (NORMAL / MEDIUM RISK / HIGH RISK)
+       - Surplus and deficit buckets for redistribution recommendations
+   - Runs on port 3000.
+
+c) Supabase Cloud Database (PostgreSQL):
+   - Cloud-hosted PostgreSQL database provided by Supabase.
+   - Stores all sensor readings in the "Food_Stock_Data" table with columns:
+     * id (int8, primary key, auto-increment)
+     * device_id (text) - Identifies the distribution center
+     * weight (numeric) - Current remaining stock weight
+     * total_weight (numeric) - Total stock added for the day
+     * consumed_weight (numeric) - Total stock consumed for the day
+     * created_at (timestamptz) - Auto-generated timestamp
+   - Accessed via Supabase JS SDK using environment-secured API keys.
+
+d) Frontend Web Dashboard:
+   - A responsive single-page web application served on port 5000.
+   - Polls the backend every 5 seconds for live data updates.
+   - Displays three main sections:
+     * System Alerts: Shows HIGH RISK and MEDIUM RISK warnings.
+     * Redistribution Recommendations: Suggests moving stock from surplus
+       centers to deficit centers.
+     * Center Comparison Table: Side-by-side view of all active centers
+       showing Daily Total Stock, Total Consumed, Remaining Stock,
+       Recent Consumption Rate, Avg Consumption (24h), and Risk Status.
+   - Built with vanilla HTML, CSS, and JavaScript (no frameworks).
+   - Features a modern dark theme with responsive grid layout.
+
+
+2. HARDWARE UTILIZED
+================================================================================
+
+2.1 Microcontroller
+-------------------
+   - ESP8266 (NodeMCU) Wi-Fi Microcontroller
+     * Built-in IEEE 802.11 b/g/n Wi-Fi module
+     * Operating Voltage: 3.3V
+     * Digital I/O Pins: 11 (GPIO)
+     * Flash Memory: 4 MB
+     * Clock Speed: 80 MHz (up to 160 MHz)
+     * Used for: Wi-Fi connectivity, button input reading, HTTP communication
+
+2.2 Sensors and Input Devices
+-----------------------------
+   - Push Button Switch x 2
+     * Button 1 (connected to GPIO D5): Used to add stock to the daily total
+     * Button 2 (connected to GPIO D6): Used to record consumed/removed stock
+     * Active LOW configuration with internal/external pull-up resistors
+     * Software debounce delay: 200 milliseconds
+
+   - Load Cell with HX711 Amplifier (Planned/Simulated)
+     * In the current prototype, the consumed weight is simulated with a
+       fixed value (5 kg per button press).
+     * The architecture supports integration of a real load cell sensor
+       through the readSimulatedConsumedWeight() function, which can be
+       replaced with actual HX711 readings.
+
+2.3 Other Components
+--------------------
+   - Breadboard: For prototyping circuit connections
+   - Jumper Wires (Male-to-Male): For connecting buttons to ESP8266 GPIO pins
+   - USB Micro-B Cable: For programming and powering the ESP8266
+   - 10K Ohm Resistors x 2: Pull-up resistors for button inputs
+   - Computer/Laptop: Acts as the local backend server host
+
+
+3. SOFTWARE UTILIZED
+================================================================================
+
+3.1 Programming Languages
+-------------------------
+   - C/C++ (Arduino): ESP8266 firmware development
+   - JavaScript (Node.js): Backend server logic and analytics engine
+   - JavaScript (Vanilla): Frontend dashboard interactivity
+   - HTML5: Dashboard page structure
+   - CSS3: Dashboard styling and responsive design
+   - SQL: Database schema modifications (PostgreSQL)
+
+3.2 Development Tools and Platforms
+-----------------------------------
+   - Arduino IDE: Compiling and flashing ESP8266 firmware
+   - Supabase: Cloud-hosted PostgreSQL database with REST API
+   - Node.js (v18+): Server-side JavaScript runtime
+   - npm: Node.js package manager for dependency management
+   - npx serve: Lightweight static file server for the frontend
+   - Visual Studio Code: Code editor and development environment
+   - Web Browser (Chrome/Edge): Dashboard viewing and testing
+
+3.3 Libraries and Dependencies
+-------------------------------
+
+   ESP8266 (Arduino Libraries):
+   - Arduino.h             - Core Arduino framework functions
+   - ArduinoJson.h         - JSON serialization/deserialization for HTTP payloads
+   - ESP8266WiFi.h         - Wi-Fi connectivity for ESP8266
+   - ESP8266HTTPClient.h   - HTTP client for making POST requests
+   - WiFiClientSecure.h    - Secure Wi-Fi client (available for HTTPS)
+
+   Node.js Backend (npm packages):
+   - express (v5.2.1)              - Web application framework for REST APIs
+   - @supabase/supabase-js (v2.99) - Official Supabase JavaScript client SDK
+   - body-parser (v2.2.2)          - HTTP request body parsing middleware
+   - cors (v2.8.6)                 - Cross-Origin Resource Sharing middleware
+   - dotenv (v17.3.1)              - Environment variable management from .env
+
+   Frontend:
+   - No external libraries or frameworks used
+   - Pure vanilla HTML5, CSS3, and JavaScript (ES6+)
+
+
+4. PROTOTYPE PICTURE
+================================================================================
+
+   [Insert photograph of the physical prototype here]
+
+   The prototype consists of:
+   - An ESP8266 NodeMCU board mounted on a breadboard
+   - Two push buttons connected to pins D5 and D6 via pull-up resistors
+   - USB cable connected to a laptop running the Node.js backend server
+   - The dashboard is displayed on the laptop's web browser at localhost:5000
+
+
+5. RESULTS AND DISCUSSION
+================================================================================
+
+5.1 Output Screenshots / Graphs
+--------------------------------
+
+   [Insert screenshot of the dashboard here showing:]
+   - System Alerts panel displaying risk warnings
+   - Redistribution Recommendations panel with transfer suggestions
+   - Center Comparison table with metrics for all active centers
+
+   The dashboard displays real-time data from all active distribution centers
+   in a comparison table format. Key metrics shown include:
+   - Daily Total Stock (kg): Cumulative stock added via Button 1
+   - Total Consumed (kg): Cumulative stock removed via Button 2
+   - Remaining Stock (kg): Calculated as Total - Consumed
+   - Recent Consumption Rate (kg): Difference between last two readings
+   - Average Consumption over 24h (kg): Mean of all weight drops in 24 hours
+   - Risk Status: NORMAL (green), MEDIUM RISK (yellow), HIGH RISK (red)
+
+5.2 Observations
+-----------------
+
+   a) Real-Time Data Transmission:
+      - The ESP8266 successfully transmits stock data to the Node.js backend
+        over the local Wi-Fi network via HTTP POST requests.
+      - The backend reliably forwards data to the Supabase cloud database
+        using the official Supabase JS SDK.
+      - End-to-end latency from button press to dashboard update is
+        approximately 5-10 seconds (including the 5-second polling interval).
+
+   b) Dynamic Risk Assessment:
+      - The system dynamically computes safety thresholds based on the
+        24-hour average consumption rate rather than using fixed values.
+      - The "safeBuffer" is set as: max(3 kg, avgConsumption)
+      - The "targetLevel" is set as: safeBuffer + 2 kg
+      - This ensures that centers with higher consumption rates trigger
+        alerts earlier, preventing food shortages proactively.
+
+   c) Intelligent Redistribution:
+      - The redistribution algorithm identifies surplus and deficit centers
+        based on dynamically calculated thresholds.
+      - Surplus centers: Stock above targetLevel with NORMAL risk status
+      - Deficit centers: Stock below safeBuffer
+      - The system recommends specific quantities to move between centers,
+        ensuring deficit centers are brought up to the targetLevel.
+
+   d) Additive Stock Management:
+      - Button 1 adds stock incrementally (10 kg per press) rather than
+        resetting to a fixed value. This supports realistic scenarios where
+        additional rations are delivered throughout the day.
+      - Button 2 records consumption incrementally (5 kg per press),
+        simulating food distribution events.
+
+   e) Multi-Center Support:
+      - The system supports multiple distribution centers simultaneously.
+      - The current deployment uses one ESP8266 and two ESP32 devices with
+        unique device_id values:
+        * Center A (ESP8266)
+        * Center B (ESP32 #1)
+        * Center C (ESP32 #2)
+      - The dashboard displays all active centers side-by-side for comparison.
+
+5.3 Performance Analysis
+-------------------------
+
+   a) Data Accuracy:
+      - All stock calculations (total, consumed, remaining) are performed
+        on each device (ESP8266/ESP32) before transmission, ensuring consistency.
+      - The backend independently validates incoming data and rejects
+        malformed requests (missing device_id or weight).
+      - Floating-point values are used throughout for precision.
+
+   b) System Responsiveness:
+      - Button debouncing at 200 ms prevents duplicate readings.
+      - The dashboard polls the backend every 5 seconds, providing
+        near-real-time updates without overloading the server.
+      - The 24-hour sliding window for data queries ensures that only
+        recent and relevant data is processed, keeping response times low.
+
+   c) Scalability:
+      - The architecture supports adding new distribution centers by simply
+        deploying additional ESP8266/ESP32 devices with unique device_id values.
+      - The PostgreSQL database on Supabase can handle thousands of records
+        without performance degradation.
+      - The backend's grouping and analytics logic scales linearly with
+        the number of active centers.
+
+   d) Reliability:
+      - Device firmware (ESP8266 and ESP32) includes Wi-Fi connection checks before each
+        data transmission attempt.
+      - The backend gracefully handles database connection errors and
+        returns appropriate HTTP error codes.
+      - The frontend handles missing or null values with fallback defaults,
+        ensuring the dashboard never crashes due to incomplete data.
+
+   e) Limitations:
+      - The current prototype uses simulated weight values (fixed 5 kg and
+        10 kg increments) instead of actual load cell readings.
+      - The system requires a stable Wi-Fi connection for data transmission.
+      - The ESP8266 sends data to a local Node.js server, requiring both
+        devices to be on the same network.
+      - The 24-hour data window means centers without recent activity
+        will not appear on the dashboard.
+
+
+================================================================================
+                              END OF REPORT
+================================================================================
