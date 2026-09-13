@@ -854,27 +854,81 @@ function renderVerdict(v, txResult = null) {
 }
 
 // ==========================================
-// 10. MODULE M5: SHA-256 AUDIT LOG VIEWER
+// 10. MODULE M5 & M6: SHA-256 AUDIT LOG & INSPECTING OFFICER SUITE
 // ==========================================
+let currentAuditStatus = 'ALL';
+
+window.setAuditStatusFilter = function(status) {
+    currentAuditStatus = status;
+    document.querySelectorAll(".audit-filter-btn").forEach(btn => {
+        if (btn.getAttribute("data-status") === status) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+    loadAuditTransactions();
+};
+
 window.loadAuditTransactions = async function() {
     const container = document.getElementById("transactionsTableContainer");
     const badge = document.getElementById("chainIntegrityBadge");
+    const alertBanner = document.getElementById("chainAlertBanner");
+    const flaggedBadge = document.getElementById("flaggedCountBadge");
+    const shopFilter = document.getElementById("auditShopFilter")?.value || "";
+    const searchFilter = document.getElementById("auditSearchInput")?.value || "";
+
+    const params = new URLSearchParams();
+    if (currentAuditStatus && currentAuditStatus !== "ALL") {
+        params.append("status", currentAuditStatus);
+    }
+    if (shopFilter) {
+        params.append("shop_id", shopFilter);
+    }
+    if (searchFilter) {
+        params.append("search", searchFilter);
+    }
 
     try {
-        const res = await fetch("http://localhost:3000/api/transactions");
+        const res = await fetch(`http://localhost:3000/api/transactions?${params.toString()}`);
         const data = await res.json();
 
-        // Update Chain Integrity Badge
+        // Update Flagged Count Badge in Filter Bar
+        if (flaggedBadge) {
+            flaggedBadge.innerText = data.flagged_count !== undefined ? data.flagged_count : 0;
+        }
+
+        // Update Chain Integrity Badge & Alert Banner
         if (data.chain_integrity?.valid) {
             badge.className = "chain-status-badge";
             badge.innerHTML = `<span class="status-dot green"></span> Chain Intact (${data.chain_integrity.count} Blocks)`;
+            if (alertBanner) {
+                alertBanner.style.display = "none";
+            }
         } else {
             badge.className = "chain-status-badge broken";
             badge.innerHTML = `<span class="status-dot" style="background: #f43f5e;"></span> Chain Broken! Tamper Detected`;
+            if (alertBanner) {
+                alertBanner.className = "chain-alert-banner danger";
+                alertBanner.style.display = "flex";
+                alertBanner.innerHTML = `
+                    <div style="font-size: 1.5rem; line-height: 1;">🚨</div>
+                    <div>
+                        <strong>SECURITY ALERT: LEDGER TAMPER DETECTED BY SHA-256 CHAIN ENGINE!</strong><br>
+                        <span>${data.chain_integrity?.message || 'Data integrity verification failed across historical blocks.'}</span><br>
+                        <span style="font-size: 0.75rem; opacity: 0.9;">Tampered block index: <strong>#${data.chain_integrity?.tampered_at_index ?? '-'}</strong> | Transaction: <code>${data.chain_integrity?.tampered_tx_id ?? '-'}</code></span>
+                    </div>
+                `;
+            }
         }
 
         if (!data.transactions || data.transactions.length === 0) {
-            container.innerHTML = '<p class="empty-state">No transaction records in ledger yet. Perform a dispense above to mint the first block.</p>';
+            container.innerHTML = `
+                <div class="empty-state" style="padding: 2.5rem 1rem;">
+                    <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">No transaction records match the current filter.</p>
+                    <span style="font-size: 0.8rem; color: #64748b;">Filter active: Status=${currentAuditStatus}${shopFilter ? ', Shop=' + shopFilter : ''}${searchFilter ? ', Search="' + searchFilter + '"' : ''}</span>
+                </div>
+            `;
             return;
         }
 
@@ -885,18 +939,47 @@ window.loadAuditTransactions = async function() {
                 ? `<span class="status-badge status-NORMAL">APPROVED</span>`
                 : `<span class="status-badge status-HIGH">FLAGGED</span>`;
 
+            // Investigation status formatting
+            const invStatus = tx.investigation_status || (isApproved ? "VERIFIED_NORMAL" : "PENDING_REVIEW");
+            let invBadgeClass = "normal";
+            if (invStatus === "PENDING_REVIEW") invBadgeClass = "pending";
+            else if (invStatus.startsWith("RESOLVED")) invBadgeClass = "resolved";
+            else if (invStatus === "UNDER_INVESTIGATION") invBadgeClass = "investigating";
+
+            const violationsChip = tx.violations && tx.violations.length > 0
+                ? `<div style="font-size: 0.68rem; color: #fb7185; margin-top: 0.2rem;">⚠️ ${tx.violations.map(v => v.rule).join(", ")}</div>`
+                : "";
+
             return `
-                <tr>
-                    <td><strong>${tx.id}</strong><br><span style="font-size: 0.68rem; color: #64748b;">${time}</span></td>
-                    <td><strong>${tx.card_no}</strong><br><span style="font-size: 0.72rem; color: #94a3b8;">${tx.beneficiary_name}</span></td>
-                    <td>${tx.shop_id}</td>
+                <tr onclick="openTxModal('${tx.id}')" title="Click to view full cryptographic proof & officer notes">
+                    <td>
+                        <strong>${tx.id}</strong><br>
+                        <span style="font-size: 0.68rem; color: #64748b;">${time}</span>
+                    </td>
+                    <td>
+                        <strong>${tx.card_no}</strong><br>
+                        <span style="font-size: 0.72rem; color: #94a3b8;">${tx.beneficiary_name}</span>
+                    </td>
+                    <td><span style="font-size: 0.8rem;">${tx.shop_id}</span></td>
                     <td><strong>${tx.claimed_commodity}</strong></td>
-                    <td><strong style="color: #38bdf8;">${tx.measured_weight}</strong></td>
-                    <td>${tx.vision_commodity} <span style="font-size: 0.68rem; color: #a855f7;">(${tx.vision_confidence}%)</span></td>
-                    <td>${statusBadge}</td>
+                    <td><strong style="color: #38bdf8;">${tx.measured_weight} kg/L</strong></td>
+                    <td>
+                        ${tx.vision_commodity}
+                        <span style="font-size: 0.68rem; color: #a855f7;">(${tx.vision_confidence}%)</span>
+                    </td>
+                    <td>
+                        ${statusBadge}
+                        ${violationsChip}
+                    </td>
+                    <td>
+                        <span class="inv-badge ${invBadgeClass}">${invStatus.replace(/_/g, ' ')}</span>
+                    </td>
                     <td>
                         <span class="hash-chip" title="SHA-256 Current Hash: ${tx.current_hash}">${tx.current_hash.substring(0, 16)}...</span><br>
                         <span style="font-size: 0.65rem; color: #64748b;">Prev: ${tx.prev_hash.substring(0, 10)}...</span>
+                    </td>
+                    <td>
+                        <button class="btn-inspect" onclick="event.stopPropagation(); openTxModal('${tx.id}')">🔍 Inspect</button>
                     </td>
                 </tr>
             `;
@@ -908,12 +991,14 @@ window.loadAuditTransactions = async function() {
                     <tr>
                         <th>TX ID / Time</th>
                         <th>Beneficiary</th>
-                        <th>Shop</th>
+                        <th>Shop Center</th>
                         <th>Claimed</th>
                         <th>Scale (M2)</th>
                         <th>Vision (M3)</th>
-                        <th>Verdict</th>
+                        <th>Rule Verdict</th>
+                        <th>Audit Status</th>
                         <th>SHA-256 Chained Hash</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -926,11 +1011,212 @@ window.loadAuditTransactions = async function() {
     }
 };
 
+// --- M6 Tamper Simulation & Repair Demo ---
+window.triggerTamperDemo = async function() {
+    showToast("⚠️ Injecting unauthorized data tampering into historical block...");
+    try {
+        const res = await fetch("http://localhost:3000/api/transactions/tamper-demo", { method: "POST" });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`🚨 Tamper simulated on Block #${data.tampered_index} (TX: ${data.tampered_tx_id})!`, true);
+        } else {
+            showToast(`⚠️ ${data.message || 'No records available to tamper'}`);
+        }
+        await loadAuditTransactions();
+    } catch (e) {
+        showToast(`❌ Tamper demo failed: ${e.message}`, true);
+    }
+};
+
+window.triggerRepairDemo = async function() {
+    showToast("⏳ Restoring ledger from verified pre-tamper snapshot...");
+    try {
+        const res = await fetch("http://localhost:3000/api/transactions/repair-demo", { method: "POST" });
+        const data = await res.json();
+        showToast(`🛡️ ${data.message}`);
+        await loadAuditTransactions();
+    } catch (e) {
+        showToast(`❌ Repair failed: ${e.message}`, true);
+    }
+};
+
+// --- M6 Inspecting Officer Drill-Down Modal ---
+window.openTxModal = async function(txId) {
+    const modal = document.getElementById("txDrillDownModal");
+    const modalBody = document.getElementById("modalTxBody");
+    const modalTitle = document.getElementById("modalTxId");
+    const modalTime = document.getElementById("modalTxTime");
+
+    if (!modal || !modalBody) return;
+
+    modal.style.display = "flex";
+    modalTitle.innerText = `Loading ${txId}...`;
+    modalTime.innerText = "";
+    modalBody.innerHTML = `<p class="empty-state">⏳ Fetching cryptographic proof and officer records...</p>`;
+
+    try {
+        const res = await fetch(`http://localhost:3000/api/transactions/${encodeURIComponent(txId)}`);
+        if (!res.ok) {
+            modalBody.innerHTML = `<div class="empty-state" style="color: #f43f5e;">Transaction not found.</div>`;
+            return;
+        }
+
+        const tx = await res.json();
+        modalTitle.innerText = `Transaction ${tx.id}`;
+        modalTime.innerText = `Recorded: ${new Date(tx.timestamp).toLocaleString()} • Chain Block #${tx.chain_index}`;
+
+        const isApproved = tx.status === "APPROVED";
+        const isValidSignature = tx.hash_valid;
+
+        // Violations block
+        let violationsHtml = "";
+        if (tx.violations && tx.violations.length > 0) {
+            violationsHtml = `
+                <div>
+                    <span class="modal-section-title">🚨 Identified Rule Violations</span>
+                    <div class="violation-box" style="margin-top: 0.35rem;">
+                        ${tx.violations.map(v => `<div>• <strong>[${v.rule}]</strong>: ${v.message}</div>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        modalBody.innerHTML = `
+            <!-- 1. Metadata Grid -->
+            <div>
+                <span class="modal-section-title">📦 Transaction & Dispense Metadata</span>
+                <div class="tx-meta-grid">
+                    <div class="tx-meta-item">
+                        <span class="lbl">Beneficiary Card</span>
+                        <span class="val">${tx.card_no} (${tx.beneficiary_name})</span>
+                    </div>
+                    <div class="tx-meta-item">
+                        <span class="lbl">Distribution Center</span>
+                        <span class="val">${tx.shop_id}</span>
+                    </div>
+                    <div class="tx-meta-item">
+                        <span class="lbl">Claimed Commodity</span>
+                        <span class="val">${tx.claimed_commodity} (${tx.claimed_amount} kg/L)</span>
+                    </div>
+                    <div class="tx-meta-item">
+                        <span class="lbl">Scale Measurement (M2)</span>
+                        <span class="val" style="color: #38bdf8;">${tx.measured_weight} kg/L</span>
+                    </div>
+                    <div class="tx-meta-item">
+                        <span class="lbl">Vision Detection (M3)</span>
+                        <span class="val" style="color: #c084fc;">${tx.vision_commodity} (${tx.vision_confidence}%)</span>
+                    </div>
+                    <div class="tx-meta-item">
+                        <span class="lbl">Rule Verdict</span>
+                        <span class="val" style="color: ${isApproved ? '#34d399' : '#fb7185'}; font-weight: 800;">
+                            ${isApproved ? '✅ APPROVED' : '🚨 FLAGGED'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            ${violationsHtml}
+
+            <!-- 2. Cryptographic Proof Breakdown -->
+            <div>
+                <span class="modal-section-title">🔐 Cryptographic Ledger Proof (SHA-256 Chained)</span>
+                <div class="crypto-proof-box">
+                    <div class="signature-verdict-banner ${isValidSignature ? 'valid' : 'tampered'}">
+                        <span>${isValidSignature ? '✅ CRYPTOGRAPHIC SIGNATURE MATCH - UNBROKEN INTEGRITY' : '🚨 SIGNATURE MISMATCH - DATA TAMPERING DETECTED!'}</span>
+                        <span>Block #${tx.chain_index}</span>
+                    </div>
+
+                    <div class="crypto-field">
+                        <label>Previous Block Hash (<code>prev_hash</code>):</label>
+                        <div class="crypto-code">${tx.prev_hash}</div>
+                    </div>
+
+                    <div class="crypto-field">
+                        <label>Canonical Payload String (Input to SHA-256):</label>
+                        <div class="crypto-code">${tx.canonical_string}</div>
+                    </div>
+
+                    <div class="crypto-field">
+                        <label>Recorded Block Hash (<code>current_hash</code>):</label>
+                        <div class="crypto-code" style="color: ${isValidSignature ? '#38bdf8' : '#fb7185'};">${tx.current_hash}</div>
+                    </div>
+
+                    <div class="crypto-field">
+                        <label>Live Recomputed Hash (from payload & prev_hash):</label>
+                        <div class="crypto-code" style="color: ${isValidSignature ? '#38bdf8' : '#fb7185'};">${tx.computed_hash}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Inspecting Officer Investigation Case Management -->
+            <div>
+                <span class="modal-section-title">📋 Inspecting Officer Audit Notes & Case Resolution</span>
+                <div class="officer-form-group">
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <label style="font-size: 0.78rem; font-weight: 700; color: #94a3b8;">Case Resolution Status:</label>
+                        <select id="modalInvStatus" class="form-select-sm" style="flex: 1; max-width: 320px;">
+                            <option value="PENDING_REVIEW" ${tx.investigation_status === 'PENDING_REVIEW' ? 'selected' : ''}>⏳ Pending Officer Review</option>
+                            <option value="UNDER_INVESTIGATION" ${tx.investigation_status === 'UNDER_INVESTIGATION' ? 'selected' : ''}>🔍 Under Investigation</option>
+                            <option value="RESOLVED_EXPLAINED" ${tx.investigation_status === 'RESOLVED_EXPLAINED' ? 'selected' : ''}>✅ Resolved: Legitimate Dispense Verified</option>
+                            <option value="RESOLVED_PENALIZED" ${tx.investigation_status === 'RESOLVED_PENALIZED' ? 'selected' : ''}>⚖️ Resolved: Quota Fraud Penalized</option>
+                            <option value="VERIFIED_NORMAL" ${tx.investigation_status === 'VERIFIED_NORMAL' ? 'selected' : ''}>✔️ Verified Normal Dispense</option>
+                        </select>
+                    </div>
+
+                    <label style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; margin-top: 0.25rem;">Officer Case Notes & Audit Findings:</label>
+                    <textarea id="modalOfficerNotes" class="officer-notes-textarea" placeholder="Enter findings, physical scale calibration verification, customer interview notes, or disciplinary actions...">${tx.officer_notes || ''}</textarea>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+                        <button class="btn btn-secondary btn-sm" onclick="closeTxModal()">Close</button>
+                        <button class="btn btn-primary btn-sm" onclick="saveInvestigationNotes('${tx.id}')">💾 Save Investigation Notes</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (e) {
+        modalBody.innerHTML = `<div class="empty-state" style="color: #f43f5e;">Failed to load transaction: ${e.message}</div>`;
+    }
+};
+
+window.closeTxModal = function() {
+    const modal = document.getElementById("txDrillDownModal");
+    if (modal) modal.style.display = "none";
+};
+
+window.saveInvestigationNotes = async function(txId) {
+    const status = document.getElementById("modalInvStatus")?.value;
+    const notes = document.getElementById("modalOfficerNotes")?.value || "";
+
+    showToast("⏳ Saving officer case notes...");
+    try {
+        const res = await fetch(`http://localhost:3000/api/transactions/${encodeURIComponent(txId)}/investigate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status, notes })
+        });
+        const data = await res.json();
+        showToast("✅ " + data.message);
+        await loadAuditTransactions();
+        // Re-open/refresh modal to show updated status
+        await openTxModal(txId);
+    } catch (e) {
+        showToast(`❌ Failed to save notes: ${e.message}`, true);
+    }
+};
+
+// Close modal when clicking backdrop
+document.getElementById("txDrillDownModal")?.addEventListener("click", function(e) {
+    if (e.target === this) {
+        closeTxModal();
+    }
+});
+
 window.clearAuditLog = async function() {
     if (!confirm("Are you sure you want to clear the entire SHA-256 transaction audit log?")) return;
     try {
         await fetch("http://localhost:3000/api/transactions/clear", { method: "POST" });
         await loadAuditTransactions();
+        showToast("🗑️ Audit log cleared.");
     } catch (e) {
         alert("Failed to clear log: " + e.message);
     }

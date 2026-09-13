@@ -874,21 +874,88 @@ app.post("/api/dispense", async (req, res) => {
 
 /**
  * GET /api/transactions
- * Retrieve recent transactions and current SHA-256 chain integrity status
+ * Retrieve transactions with optional filters (?status=FLAGGED|APPROVED, ?shop_id=..., ?search=...)
+ * and current SHA-256 chain integrity status
  */
 app.get("/api/transactions", (req, res) => {
     try {
-        const limit = Number(req.query.limit || 50);
-        const list = transactions.getAllTransactions(limit);
+        const { status, shop_id, search, limit } = req.query;
+        const list = transactions.getAllTransactions({ status, shop_id, search, limit });
         const integrity = transactions.verifyChainIntegrity();
+        const flaggedCount = transactions.getFlaggedCount();
 
         res.json({
             count: list.length,
+            flagged_count: flaggedCount,
             transactions: list,
-            chain_integrity: integrity
+            chain_integrity: integrity,
+            filters_applied: { status, shop_id, search }
         });
     } catch (err) {
         res.status(500).json({ error: "Failed to fetch transactions", details: err.message });
+    }
+});
+
+/**
+ * GET /api/transactions/:id
+ * Drill-down into a single transaction with cryptographic signature verification breakdown
+ */
+app.get("/api/transactions/:id", (req, res) => {
+    try {
+        const tx = transactions.getTransactionById(req.params.id);
+        if (!tx) return res.status(404).json({ error: "Transaction not found" });
+        res.json(tx);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to retrieve transaction details", details: err.message });
+    }
+});
+
+/**
+ * POST /api/transactions/:id/investigate
+ * MODULE M6: Inspecting officer logs case notes or resolution status
+ */
+app.post("/api/transactions/:id/investigate", (req, res) => {
+    try {
+        const { status, notes } = req.body || {};
+        const result = transactions.updateInvestigation(req.params.id, status, notes);
+        if (!result.success) return res.status(404).json({ error: result.error });
+        res.json({ message: "Officer investigation notes recorded successfully.", ...result });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to update investigation", details: err.message });
+    }
+});
+
+/**
+ * POST /api/transactions/tamper-demo
+ * Intentionally alters historical payload data to demonstrate hash chain tamper detection
+ */
+app.post("/api/transactions/tamper-demo", (req, res) => {
+    try {
+        const result = transactions.tamperWithTransaction();
+        const integrity = transactions.verifyChainIntegrity();
+        res.json({
+            ...result,
+            chain_integrity: integrity
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Tamper demo failed", details: err.message });
+    }
+});
+
+/**
+ * POST /api/transactions/repair-demo
+ * Restores valid hash chain state after tamper demo
+ */
+app.post("/api/transactions/repair-demo", (req, res) => {
+    try {
+        const result = transactions.repairChain();
+        const integrity = transactions.verifyChainIntegrity();
+        res.json({
+            ...result,
+            chain_integrity: integrity
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Repair demo failed", details: err.message });
     }
 });
 

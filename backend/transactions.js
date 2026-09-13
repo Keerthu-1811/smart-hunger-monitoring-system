@@ -183,6 +183,8 @@ function recordTransaction(entry) {
         vision_confidence: Number(entry.vision_confidence || 99.0),
         status: entry.status || "APPROVED",
         violations: entry.violations || [],
+        investigation_status: entry.status === "FLAGGED" ? "PENDING_REVIEW" : "VERIFIED_NORMAL",
+        officer_notes: "",
         prev_hash: prevHash,
         current_hash: ""
     };
@@ -196,11 +198,127 @@ function recordTransaction(entry) {
 }
 
 /**
- * Returns all transactions with pagination/limit
+ * Returns all transactions with optional filtering and pagination
  */
-function getAllTransactions(limit = 50) {
-    const list = readTransactions();
+function getAllTransactions(filter = {}) {
+    let list = readTransactions();
+
+    if (filter.status) {
+        list = list.filter(t => t.status.toUpperCase() === filter.status.toUpperCase());
+    }
+    if (filter.shop_id) {
+        list = list.filter(t => t.shop_id.toLowerCase().includes(filter.shop_id.toLowerCase().trim()));
+    }
+    if (filter.search) {
+        const q = filter.search.toLowerCase().trim();
+        list = list.filter(t =>
+            t.card_no.toLowerCase().includes(q) ||
+            t.id.toLowerCase().includes(q) ||
+            t.beneficiary_name.toLowerCase().includes(q) ||
+            t.claimed_commodity.toLowerCase().includes(q)
+        );
+    }
+
+    const limit = Number(filter.limit || 50);
     return list.slice(-limit).reverse();
+}
+
+/**
+ * Get single transaction by ID with full cryptographic verification breakdown
+ */
+function getTransactionById(txId) {
+    const list = readTransactions();
+    const index = list.findIndex(t => t.id === txId);
+    if (index === -1) return null;
+
+    const tx = list[index];
+    const computedHash = calculateHash(tx.prev_hash, tx);
+    const isValid = computedHash === tx.current_hash;
+
+    const canonicalString = `${tx.prev_hash}|${tx.id}|${tx.timestamp}|${tx.card_no}|${tx.shop_id}|${tx.claimed_commodity}|${tx.measured_weight}|${tx.vision_commodity}|${tx.status}`;
+
+    return {
+        ...tx,
+        chain_index: index,
+        canonical_string: canonicalString,
+        computed_hash: computedHash,
+        hash_valid: isValid
+    };
+}
+
+/**
+ * MODULE M6: Inspecting Officer Case Management
+ * Updates investigation notes and resolution status without altering the immutable physical dispense hash.
+ */
+function updateInvestigation(txId, status, notes) {
+    const list = readTransactions();
+    const tx = list.find(t => t.id === txId);
+    if (!tx) return { success: false, error: "Transaction not found" };
+
+    if (status) tx.investigation_status = status;
+    if (notes !== undefined) tx.officer_notes = notes;
+    tx.investigated_at = new Date().toISOString();
+
+    writeTransactions(list);
+    return { success: true, transaction: tx };
+}
+
+/**
+ * MODULE M5/M6: Demonstration of Cryptographic Tamper Detection
+ * Intentionally alters the payload of a past block in transactions.json without updating hashes.
+ */
+let backupForRepair = null;
+
+function tamperWithTransaction(targetIndex = null) {
+    const list = readTransactions();
+    if (list.length === 0) {
+        return { success: false, error: "No transactions in ledger to tamper with." };
+    }
+
+    backupForRepair = JSON.parse(JSON.stringify(list));
+
+    const idx = targetIndex !== null && targetIndex >= 0 && targetIndex < list.length
+        ? targetIndex
+        : Math.max(0, list.length - 2); // Tamper with penultimate block or genesis
+
+    const targetTx = list[idx];
+    const originalWeight = targetTx.measured_weight;
+    const tamperedWeight = originalWeight + 15.0; // Forge weight
+
+    // Directly alter recorded weight in raw ledger file (simulating malicious database edit)
+    targetTx.measured_weight = tamperedWeight;
+    writeTransactions(list);
+
+    return {
+        success: true,
+        tampered_index: idx,
+        tampered_tx_id: targetTx.id,
+        original_weight: originalWeight,
+        tampered_weight: tamperedWeight,
+        message: `Simulated malicious database modification on TX ${targetTx.id} at block index ${idx}! Weight changed from ${originalWeight}kg to ${tamperedWeight}kg.`
+    };
+}
+
+/**
+ * Repairs / restores chain after tamper demonstration
+ */
+function repairChain() {
+    if (backupForRepair && Array.isArray(backupForRepair)) {
+        writeTransactions(backupForRepair);
+        backupForRepair = null;
+        return { success: true, message: "Ledger restored from pre-tamper snapshot. Hash chain verified intact." };
+    }
+
+    // Otherwise recalculate valid hash chain
+    const list = readTransactions();
+    let prev = GENESIS_HASH;
+    for (const tx of list) {
+        tx.prev_hash = prev;
+        tx.current_hash = calculateHash(prev, tx);
+        prev = tx.current_hash;
+    }
+    writeTransactions(list);
+    return { success: true, message: "Ledger cryptographic signatures re-anchored. Hash chain intact." };
 }
 
 /**
@@ -224,7 +342,7 @@ function verifyChainIntegrity() {
                 valid: false,
                 tampered_at_index: i,
                 tampered_tx_id: tx.id,
-                message: `Hash chain broken at index ${i} (TX: ${tx.id}). Expected prev_hash: ${expectedPrevHash}, found: ${tx.prev_hash}`
+                message: `Hash chain broken at index ${i} (TX: ${tx.id})! Expected prev_hash: ${expectedPrevHash.substring(0, 16)}..., found: ${tx.prev_hash.substring(0, 16)}...`
             };
         }
 
@@ -235,7 +353,7 @@ function verifyChainIntegrity() {
                 valid: false,
                 tampered_at_index: i,
                 tampered_tx_id: tx.id,
-                message: `Data tampering detected at index ${i} (TX: ${tx.id})! Current hash does not match payload.`
+                message: `Data tampering detected at index ${i} (TX: ${tx.id})! Current hash (${tx.current_hash.substring(0, 16)}...) does not match canonical payload calculation (${computed.substring(0, 16)}...).`
             };
         }
 
@@ -251,10 +369,19 @@ function verifyChainIntegrity() {
 }
 
 /**
+ * Get count of flagged transactions in ledger
+ */
+function getFlaggedCount() {
+    const list = readTransactions();
+    return list.filter(t => t.status === "FLAGGED").length;
+}
+
+/**
  * Clear all transactions
  */
 function clearTransactions() {
     writeTransactions([]);
+    backupForRepair = null;
     return { success: true, count: 0 };
 }
 
@@ -262,7 +389,12 @@ module.exports = {
     verifyThreeWayAgreement,
     recordTransaction,
     getAllTransactions,
+    getTransactionById,
+    updateInvestigation,
+    tamperWithTransaction,
+    repairChain,
     verifyChainIntegrity,
+    getFlaggedCount,
     clearTransactions,
     GENESIS_HASH
 };

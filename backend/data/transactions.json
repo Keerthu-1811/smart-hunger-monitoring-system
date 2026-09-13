@@ -78,5 +78,62 @@
     "violations": [],
     "prev_hash": "5bd7655042a48674ae3dfdd37b691a0aab51604f4a7cdacf5ef4c49b62a7796e",
     "current_hash": "d08d031deb15aadea85e02ab3c6e078dff7fecfecab68f3559b6d2c40e383cec"
+  },
+  {
+    "id": "TX-1789323294728-7169",
+    "timestamp": "2026-09-13T18:14:54.728Z",
+    "card_no": "TN-PDS-1001",
+    "beneficiary_name": "Muthu Kumar S",
+    "shop_id": "Shop 1 (Central Hub)",
+    "claimed_commodity": "Rice",
+    "claimed_amount": 10,
+    "measured_weight": 10,
+    "vision_commodity": "Rice",
+    "vision_confidence": 99,
+    "status": "APPROVED",
+    "violations": [],
+    "prev_hash": "d08d031deb15aadea85e02ab3c6e078dff7fecfecab68f3559b6d2c40e383cec",
+    "current_hash": "c24514c73e24c9cffc6db9ddc8fd520e76659c5bd9025d5adc9f4c5f6d3002b9"
+  },
+  {
+    "id": "TX-1789323341449-5379",
+    "timestamp": "2026-09-13T18:15:41.449Z",
+    "card_no": "TN-PDS-1001",
+    "beneficiary_name": "Muthu Kumar S",
+    "shop_id": "Shop 1 (Central Hub)",
+    "claimed_commodity": "Rice",
+    "claimed_amount": 10,
+    "measured_weight": 10,
+    "vision_commodity": "Rice",
+    "vision_confidence": 99,
+    "status": "APPROVED",
+    "violations": [],
+    "prev_hash": "c24514c73e24c9cffc6db9ddc8fd520e76659c5bd9025d5adc9f4c5f6d3002b9",
+    "current_hash": "8c7d58f10c091bbd81809e783a4fc371895d6dd692dfef52026fcc7200bcf572"
+  },
+  {
+    "id": "TX-1789323845372-8115",
+    "timestamp": "2026-09-13T18:24:05.372Z",
+    "card_no": "TN-PDS-1001",
+    "beneficiary_name": "Muthu Kumar S",
+    "shop_id": "Shop 1 (Central Hub)",
+    "claimed_commodity": "Rice",
+    "claimed_amount": 5,
+    "measured_weight": 5,
+    "vision_commodity": "Sugar",
+    "vision_confidence": 98.5,
+    "status": "FLAGGED",
+    "violations": [
+      {
+        "rule": "COMMODITY_MISMATCH",
+        "severity": "CRITICAL",
+        "message": "Visual Fraud Alert! Optical classifier detected 'Sugar' (98.5%), but claimed commodity is 'Rice'."
+      }
+    ],
+    "investigation_status": "UNDER_INVESTIGATION",
+    "officer_notes": "Inspecting officer verified CCTV footage. Cardholder presented Sugar canister while claiming Rice allocation. Notice issued to Fair Price Shop distributor.",
+    "prev_hash": "8c7d58f10c091bbd81809e783a4fc371895d6dd692dfef52026fcc7200bcf572",
+    "current_hash": "55179472b8d12c901a6b5381298537be705f0014c9eebb26f632f345b703edf0",
+    "investigated_at": "2026-09-13T18:24:13.990Z"
   }
 ]

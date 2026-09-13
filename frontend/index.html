@@ -334,27 +334,81 @@
             </div>
         </section>
 
-        <!-- 7. Tamper-Evident SHA-256 Audit Log (Module M5 & M6) -->
-        <section class="panel audit-panel">
+        <!-- 7. Module M5 & M6: Inspecting Officer Audit & Tamper-Evident SHA-256 Ledger -->
+        <section class="panel audit-panel" id="officerAuditPanel">
             <div class="panel-header-with-badge">
                 <div>
-                    <h2>🔐 Module M5: Tamper-Evident SHA-256 Chained Transaction Log</h2>
-                    <p class="panel-desc">Cryptographically linked ledger: <code>current_hash = SHA256(prev_hash + tx_data)</code>. Any unauthorized ledger tampering breaks the chain instantly.</p>
+                    <h2>🔐 Module M5 & M6: Inspecting Officer Audit & Cryptographic Ledger</h2>
+                    <p class="panel-desc">Cryptographically chained ledger: <code>current_hash = SHA256(prev_hash + tx_data)</code>. Filter flagged violations shop-by-shop and drill down into cryptographic proof.</p>
                 </div>
                 <div class="chain-status-badge" id="chainIntegrityBadge">
                     <span class="status-dot green"></span> Chain Intact
                 </div>
             </div>
 
-            <div class="audit-controls">
-                <button class="btn btn-secondary btn-sm" onclick="loadAuditTransactions()">🔄 Refresh Audit Log</button>
-                <button class="btn btn-danger btn-sm" onclick="clearAuditLog()">🗑️ Clear Log</button>
+            <!-- Inspecting Officer Filter Bar (Module M6) -->
+            <div class="audit-filter-bar">
+                <div class="filter-group-status">
+                    <span class="filter-lbl">Status:</span>
+                    <button class="audit-filter-btn active" data-status="ALL" onclick="setAuditStatusFilter('ALL')">All Transactions</button>
+                    <button class="audit-filter-btn flag-btn" data-status="FLAGGED" onclick="setAuditStatusFilter('FLAGGED')">🚨 Flagged Only (<span id="flaggedCountBadge">0</span>)</button>
+                    <button class="audit-filter-btn pass-btn" data-status="APPROVED" onclick="setAuditStatusFilter('APPROVED')">✅ Approved</button>
+                </div>
+
+                <div class="filter-group-shop">
+                    <label for="auditShopFilter">Shop:</label>
+                    <select id="auditShopFilter" class="form-select-sm" onchange="loadAuditTransactions()">
+                        <option value="">All Shops (5 Centers)</option>
+                        <option value="Shop 1">Shop 1 (Central Hub)</option>
+                        <option value="Shop 2">Shop 2 (North Market)</option>
+                        <option value="Shop 3">Shop 3 (South Depot)</option>
+                        <option value="Shop 4">Shop 4 (East District)</option>
+                        <option value="Shop 5">Shop 5 (West Center)</option>
+                    </select>
+                </div>
+
+                <div class="filter-group-search">
+                    <input type="text" id="auditSearchInput" placeholder="Search Card or TX ID..." oninput="loadAuditTransactions()">
+                </div>
             </div>
 
+            <!-- Tamper Demonstration & Maintenance Controls -->
+            <div class="audit-controls-strip">
+                <div class="btn-group-left">
+                    <button class="btn btn-secondary btn-sm" onclick="loadAuditTransactions()">🔄 Refresh Audit Log</button>
+                    <button class="btn btn-warning btn-sm" onclick="triggerTamperDemo()" title="Simulate unauthorized modification to demonstrate chain break">⚠️ Demo: Simulate Ledger Tampering</button>
+                    <button class="btn btn-success btn-sm" onclick="triggerRepairDemo()" title="Restore valid chain state">🛡️ Repair / Restore Chain</button>
+                </div>
+                <div>
+                    <button class="btn btn-danger btn-sm" onclick="clearAuditLog()">🗑️ Clear Log</button>
+                </div>
+            </div>
+
+            <!-- Chain Integrity Notification Banner -->
+            <div id="chainAlertBanner" style="display: none;"></div>
+
+            <!-- Audit Transactions Table -->
             <div id="transactionsTableContainer" class="audit-table-wrap">
                 <p class="empty-state">Loading cryptographic audit log...</p>
             </div>
         </section>
+
+        <!-- Inspecting Officer Transaction Drill-Down Modal (Module M6) -->
+        <div id="txDrillDownModal" class="modal-backdrop" style="display: none;">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <div>
+                        <h3 id="modalTxId">Transaction Details</h3>
+                        <span id="modalTxTime" style="font-size: 0.75rem; color: #94a3b8;">-</span>
+                    </div>
+                    <button class="modal-close-btn" onclick="closeTxModal()">&times;</button>
+                </div>
+
+                <div class="modal-body" id="modalTxBody">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </div>
     </main>
 
     <footer>
