@@ -1,0 +1,50 @@
+[
+  {
+    "id": "TX-1789321965663-4223",
+    "timestamp": "2026-09-13T17:52:45.663Z",
+    "card_no": "TN-PDS-1001",
+    "beneficiary_name": "Muthu Kumar S",
+    "shop_id": "Shop 1 (Central Hub)",
+    "claimed_commodity": "Rice",
+    "claimed_amount": 5,
+    "measured_weight": 5,
+    "vision_commodity": "Rice",
+    "vision_confidence": 99.4,
+    "status": "APPROVED",
+    "violations": [],
+    "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "current_hash": "1fb6492eecdda18bc89ff3bef75a5ac32c879f8022542b92b7ea9d7d7663c3c0"
+  },
+  {
+    "id": "TX-1789321984738-9272",
+    "timestamp": "2026-09-13T17:53:04.738Z",
+    "card_no": "TN-PDS-2002",
+    "beneficiary_name": "Rajesh Kannan M",
+    "shop_id": "Shop 2 (North Market)",
+    "claimed_commodity": "Sugar",
+    "claimed_amount": 2,
+    "measured_weight": 2,
+    "vision_commodity": "Sugar",
+    "vision_confidence": 98.7,
+    "status": "APPROVED",
+    "violations": [],
+    "prev_hash": "1fb6492eecdda18bc89ff3bef75a5ac32c879f8022542b92b7ea9d7d7663c3c0",
+    "current_hash": "6d20a5332a3720250cb957f4aead94774a4696473e40f271c95acaf22f81a0b5"
+  },
+  {
+    "id": "TX-1789322115329-5775",
+    "timestamp": "2026-09-13T17:55:15.329Z",
+    "card_no": "TN-PDS-4001",
+    "beneficiary_name": "Govindaraj T",
+    "shop_id": "Shop 4 (East District)",
+    "claimed_commodity": "Wheat",
+    "claimed_amount": 4,
+    "measured_weight": 4,
+    "vision_commodity": "Wheat",
+    "vision_confidence": 99.5,
+    "status": "APPROVED",
+    "violations": [],
+    "prev_hash": "6d20a5332a3720250cb957f4aead94774a4696473e40f271c95acaf22f81a0b5",
+    "current_hash": "e563fcd55d6bcde9ecdc464ed5baee45c944b9d8084f4822d77453a7f2158bf9"
+  }
+]

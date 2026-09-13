@@ -4,6 +4,7 @@ const cors = require("cors");
 const path = require("path");
 const storage = require("./storage");
 const beneficiaries = require("./beneficiaries");
+const transactions = require("./transactions");
 
 const app = express();
 
@@ -680,7 +681,159 @@ app.post("/api/beneficiaries/reset", (req, res) => {
 });
 
 // ==========================================
-// 5. SERVER START
+// 5. MODULE M2 & M3 REPLICATION + M4 VERIFICATION & M5 AUDIT LOG
+// ==========================================
+
+async function getCurrentShopStock(shopId, commodity) {
+    try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const rawData = await storage.getReadingsSince(twentyFourHoursAgo);
+        const shopNorm = normalizeShop(shopId);
+        const itemNorm = normalizeCommodity(commodity);
+        const readings = rawData.filter(r => normalizeShop(r.device_id) === shopNorm && normalizeCommodity(r.item_name) === itemNorm);
+        if (readings.length === 0) return 50.0;
+        readings.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        return Number(readings[readings.length - 1].weight);
+    } catch (e) {
+        return 50.0;
+    }
+}
+
+/**
+ * POST /api/verify
+ * Dry-run 3-way check (M1 Entitlement vs M2 Weight vs M3 Vision) without committing.
+ */
+app.post("/api/verify", async (req, res) => {
+    try {
+        const body = req.body || {};
+        const { card_no, shop_id, claimed_commodity, claimed_amount, measured_weight, vision_commodity, vision_confidence } = body;
+
+        if (!card_no || !claimed_commodity || measured_weight === undefined) {
+            return res.status(400).json({ error: "Missing required fields: card_no, claimed_commodity, measured_weight" });
+        }
+
+        const currentStock = await getCurrentShopStock(shop_id || DEFAULT_SHOPS[0], claimed_commodity);
+        const result = transactions.verifyThreeWayAgreement(body, currentStock);
+
+        res.json({
+            ...result,
+            shop_current_stock: currentStock,
+            checked_at: new Date().toISOString()
+        });
+    } catch (err) {
+        console.error("Error verifying transaction:", err);
+        res.status(500).json({ error: "Verification failed", details: err.message });
+    }
+});
+
+/**
+ * POST /api/dispense
+ * Verifies transaction and commits:
+ * - If APPROVED: updates beneficiary lifted quota, decrements shop inventory stock, and appends to SHA-256 hash log.
+ * - If FLAGGED: records the flagged attempt in the SHA-256 hash log without modifying stock or quota.
+ */
+app.post("/api/dispense", async (req, res) => {
+    try {
+        const body = req.body || {};
+        const { card_no, shop_id, claimed_commodity, claimed_amount, measured_weight, vision_commodity, vision_confidence } = body;
+
+        const shop = normalizeShop(shop_id);
+        const commodity = normalizeCommodity(claimed_commodity);
+        const weight = Number(measured_weight);
+
+        const currentStock = await getCurrentShopStock(shop, commodity);
+        const verification = transactions.verifyThreeWayAgreement({
+            card_no,
+            shop_id: shop,
+            claimed_commodity: commodity,
+            claimed_amount: Number(claimed_amount || weight),
+            measured_weight: weight,
+            vision_commodity,
+            vision_confidence
+        }, currentStock);
+
+        let newShopStock = currentStock;
+        let quotaUpdate = null;
+
+        if (verification.verified) {
+            // 1. Decrement shop stock in inventory
+            newShopStock = Math.max(0, Number((currentStock - weight).toFixed(1)));
+            await storage.insertReadings([{
+                device_id: shop,
+                item_name: commodity,
+                weight: newShopStock,
+                created_at: new Date().toISOString()
+            }]);
+
+            // 2. Update beneficiary lifted quota
+            quotaUpdate = beneficiaries.updateLiftedQuota(card_no, commodity, weight);
+        }
+
+        // 3. Record transaction to tamper-evident log (APPROVED or FLAGGED)
+        const txRecord = transactions.recordTransaction({
+            card_no,
+            beneficiary_name: verification.beneficiary_summary?.name || "Unknown",
+            shop_id: shop,
+            claimed_commodity: commodity,
+            claimed_amount: Number(claimed_amount || weight),
+            measured_weight: weight,
+            vision_commodity: vision_commodity || commodity,
+            vision_confidence: vision_confidence || 99.0,
+            status: verification.status,
+            violations: verification.violations
+        });
+
+        res.json({
+            success: verification.verified,
+            status: verification.status,
+            transaction: txRecord,
+            verification,
+            new_shop_stock: newShopStock,
+            quota_update: quotaUpdate,
+            message: verification.verified
+                ? `Successfully dispensed ${weight} kg/L of ${commodity} to ${verification.beneficiary_summary?.name} (${card_no}).`
+                : `Transaction FLAGGED! ${verification.violations.map(v => v.message).join(" ")}`
+        });
+    } catch (err) {
+        console.error("Error executing dispense:", err);
+        res.status(500).json({ error: "Failed to execute dispense", details: err.message });
+    }
+});
+
+/**
+ * GET /api/transactions
+ * Retrieve recent transactions and current SHA-256 chain integrity status
+ */
+app.get("/api/transactions", (req, res) => {
+    try {
+        const limit = Number(req.query.limit || 50);
+        const list = transactions.getAllTransactions(limit);
+        const integrity = transactions.verifyChainIntegrity();
+
+        res.json({
+            count: list.length,
+            transactions: list,
+            chain_integrity: integrity
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch transactions", details: err.message });
+    }
+});
+
+/**
+ * POST /api/transactions/clear
+ */
+app.post("/api/transactions/clear", (req, res) => {
+    try {
+        const result = transactions.clearTransactions();
+        res.json({ message: "Transaction log cleared.", ...result });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to clear transactions", details: err.message });
+    }
+});
+
+// ==========================================
+// 6. SERVER START
 // ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

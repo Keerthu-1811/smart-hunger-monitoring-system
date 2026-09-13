@@ -14,7 +14,7 @@
       "Palm Oil": 2
     },
     "current_month_lifted": {
-      "Rice": 0,
+      "Rice": 5,
       "Sugar": 0,
       "Wheat": 0,
       "Toor Dal": 0,
@@ -107,7 +107,7 @@
     },
     "current_month_lifted": {
       "Rice": 0,
-      "Sugar": 0,
+      "Sugar": 2,
       "Wheat": 0,
       "Toor Dal": 0,
       "Palm Oil": 0
@@ -200,7 +200,7 @@
     "current_month_lifted": {
       "Rice": 0,
       "Sugar": 0,
-      "Wheat": 0,
+      "Wheat": 4,
       "Toor Dal": 0,
       "Palm Oil": 0
     },
