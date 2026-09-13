@@ -108,6 +108,8 @@
     "vision_confidence": 99,
     "status": "APPROVED",
     "violations": [],
+    "investigation_status": "VERIFIED_NORMAL",
+    "officer_notes": "",
     "prev_hash": "c24514c73e24c9cffc6db9ddc8fd520e76659c5bd9025d5adc9f4c5f6d3002b9",
     "current_hash": "8c7d58f10c091bbd81809e783a4fc371895d6dd692dfef52026fcc7200bcf572"
   },
@@ -130,10 +132,11 @@
         "message": "Visual Fraud Alert! Optical classifier detected 'Sugar' (98.5%), but claimed commodity is 'Rice'."
       }
     ],
-    "investigation_status": "UNDER_INVESTIGATION",
-    "officer_notes": "Inspecting officer verified CCTV footage. Cardholder presented Sugar canister while claiming Rice allocation. Notice issued to Fair Price Shop distributor.",
+    "investigation_status": "RESOLVED_EXPLAINED",
+    "officer_notes": "Officer reviewed scale log and cleared flagged entry.",
     "prev_hash": "8c7d58f10c091bbd81809e783a4fc371895d6dd692dfef52026fcc7200bcf572",
     "current_hash": "55179472b8d12c901a6b5381298537be705f0014c9eebb26f632f345b703edf0",
-    "investigated_at": "2026-09-13T18:24:13.990Z"
+    "officer_resolution": "APPROVED_BY_OFFICER",
+    "investigated_at": "2026-09-13T18:36:12.329Z"
   }
 ]

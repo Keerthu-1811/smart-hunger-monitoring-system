@@ -935,23 +935,52 @@ window.loadAuditTransactions = async function() {
         const rows = data.transactions.map(tx => {
             const time = new Date(tx.timestamp).toLocaleTimeString();
             const isApproved = tx.status === "APPROVED";
-            const statusBadge = isApproved
-                ? `<span class="status-badge status-NORMAL">APPROVED</span>`
-                : `<span class="status-badge status-HIGH">FLAGGED</span>`;
+            const isTampered = tx.is_tampered || tx.hash_valid === false;
+            const isOfficerApproved = tx.officer_resolution === "APPROVED_BY_OFFICER" || tx.investigation_status === "RESOLVED_EXPLAINED";
 
-            // Investigation status formatting
-            const invStatus = tx.investigation_status || (isApproved ? "VERIFIED_NORMAL" : "PENDING_REVIEW");
+            // Rule Verdict Badge: Reflects IoT check and Inspecting Officer resolution
+            let statusBadge = "";
+            if (isTampered) {
+                statusBadge = `<span class="status-badge status-HIGH" style="background: #dc2626; color: #fff; font-weight: 800;">🚨 TAMPERED</span>`;
+            } else if (isOfficerApproved && !isApproved) {
+                statusBadge = `<span class="status-badge status-NORMAL" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399;" title="Originally FLAGGED by rule engine, resolved as legitimate by Inspecting Officer">✅ RESOLVED (NORMAL)</span>`;
+            } else if (tx.officer_resolution === "PENALIZED_FRAUD") {
+                statusBadge = `<span class="status-badge status-HIGH" style="background: rgba(220, 38, 38, 0.2); border: 1px solid #dc2626; color: #f87171;">⚖️ PENALIZED</span>`;
+            } else if (isApproved) {
+                statusBadge = `<span class="status-badge status-NORMAL">APPROVED</span>`;
+            } else {
+                statusBadge = `<span class="status-badge status-HIGH">FLAGGED</span>`;
+            }
+
+            // Audit Status Badge: Never show "VERIFIED NORMAL" on a tampered block
+            const invStatus = isTampered ? "TAMPER_DETECTED" : (tx.investigation_status || (isApproved ? "VERIFIED_NORMAL" : "PENDING_REVIEW"));
             let invBadgeClass = "normal";
-            if (invStatus === "PENDING_REVIEW") invBadgeClass = "pending";
-            else if (invStatus.startsWith("RESOLVED")) invBadgeClass = "resolved";
-            else if (invStatus === "UNDER_INVESTIGATION") invBadgeClass = "investigating";
+            let invBadgeText = invStatus.replace(/_/g, ' ');
+            if (invStatus === "TAMPER_DETECTED") {
+                invBadgeClass = "tampered";
+                invBadgeText = "🚨 TAMPER DETECTED";
+            } else if (invStatus === "PENDING_REVIEW") {
+                invBadgeClass = "pending";
+                invBadgeText = "⏳ PENDING REVIEW";
+            } else if (invStatus.startsWith("RESOLVED")) {
+                invBadgeClass = "resolved";
+                invBadgeText = invStatus === "RESOLVED_PENALIZED" ? "⚖️ PENALIZED" : "✅ RESOLVED (LEGIT)";
+            } else if (invStatus === "UNDER_INVESTIGATION") {
+                invBadgeClass = "investigating";
+                invBadgeText = "🔍 INVESTIGATING";
+            } else if (invStatus === "VERIFIED_NORMAL") {
+                invBadgeClass = "normal";
+                invBadgeText = "✔️ VERIFIED NORMAL";
+            }
 
             const violationsChip = tx.violations && tx.violations.length > 0
                 ? `<div style="font-size: 0.68rem; color: #fb7185; margin-top: 0.2rem;">⚠️ ${tx.violations.map(v => v.rule).join(", ")}</div>`
                 : "";
 
+            const rowHighlight = isTampered ? 'style="background: rgba(239, 68, 68, 0.12);"' : '';
+
             return `
-                <tr onclick="openTxModal('${tx.id}')" title="Click to view full cryptographic proof & officer notes">
+                <tr ${rowHighlight} onclick="openTxModal('${tx.id}')" title="Click to view full cryptographic proof & officer notes">
                     <td>
                         <strong>${tx.id}</strong><br>
                         <span style="font-size: 0.68rem; color: #64748b;">${time}</span>
@@ -972,7 +1001,7 @@ window.loadAuditTransactions = async function() {
                         ${violationsChip}
                     </td>
                     <td>
-                        <span class="inv-badge ${invBadgeClass}">${invStatus.replace(/_/g, ' ')}</span>
+                        <span class="inv-badge ${invBadgeClass}">${invBadgeText}</span>
                     </td>
                     <td>
                         <span class="hash-chip" title="SHA-256 Current Hash: ${tx.current_hash}">${tx.current_hash.substring(0, 16)}...</span><br>
@@ -1067,6 +1096,22 @@ window.openTxModal = async function(txId) {
 
         const isApproved = tx.status === "APPROVED";
         const isValidSignature = tx.hash_valid;
+        const isTampered = tx.is_tampered || !isValidSignature;
+        const isOfficerApproved = tx.officer_resolution === "APPROVED_BY_OFFICER" || tx.investigation_status === "RESOLVED_EXPLAINED";
+
+        // Dynamic Rule Verdict Badge for Modal
+        let verdictBadge = isApproved ? '✅ APPROVED' : '🚨 FLAGGED';
+        let verdictColor = isApproved ? '#34d399' : '#fb7185';
+        if (isTampered) {
+            verdictBadge = '🚨 TAMPERED (INVALID HASH)';
+            verdictColor = '#f43f5e';
+        } else if (isOfficerApproved && !isApproved) {
+            verdictBadge = '✅ RESOLVED (NORMAL - APPROVED)';
+            verdictColor = '#34d399';
+        } else if (tx.officer_resolution === 'PENALIZED_FRAUD') {
+            verdictBadge = '⚖️ PENALIZED (FRAUD CONFIRMED)';
+            verdictColor = '#fb7185';
+        }
 
         // Violations block
         let violationsHtml = "";
@@ -1081,7 +1126,24 @@ window.openTxModal = async function(txId) {
             `;
         }
 
+        // Tamper Warning Banner inside modal
+        let tamperBannerHtml = "";
+        if (isTampered) {
+            tamperBannerHtml = `
+                <div class="chain-alert-banner danger" style="margin-bottom: 0.75rem;">
+                    <div style="font-size: 1.3rem; line-height: 1;">🚨</div>
+                    <div>
+                        <strong>CRYPTOGRAPHIC HASH MISMATCH DETECTED:</strong><br>
+                        <span>This block's recorded hash does not match recalculation from its canonical payload. Raw database tampering occurred.</span><br>
+                        <span style="font-size: 0.75rem; opacity: 0.9;">To restore mathematical integrity, use the <strong>'🛡️ Repair / Restore Chain'</strong> button on the dashboard.</span>
+                    </div>
+                </div>
+            `;
+        }
+
         modalBody.innerHTML = `
+            ${tamperBannerHtml}
+
             <!-- 1. Metadata Grid -->
             <div>
                 <span class="modal-section-title">📦 Transaction & Dispense Metadata</span>
@@ -1108,8 +1170,8 @@ window.openTxModal = async function(txId) {
                     </div>
                     <div class="tx-meta-item">
                         <span class="lbl">Rule Verdict</span>
-                        <span class="val" style="color: ${isApproved ? '#34d399' : '#fb7185'}; font-weight: 800;">
-                            ${isApproved ? '✅ APPROVED' : '🚨 FLAGGED'}
+                        <span class="val" style="color: ${verdictColor}; font-weight: 800;">
+                            ${verdictBadge}
                         </span>
                     </div>
                 </div>
@@ -1154,7 +1216,8 @@ window.openTxModal = async function(txId) {
                 <div class="officer-form-group">
                     <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                         <label style="font-size: 0.78rem; font-weight: 700; color: #94a3b8;">Case Resolution Status:</label>
-                        <select id="modalInvStatus" class="form-select-sm" style="flex: 1; max-width: 320px;">
+                        <select id="modalInvStatus" class="form-select-sm" style="flex: 1; max-width: 340px;">
+                            ${isTampered ? `<option value="TAMPER_DETECTED" ${tx.investigation_status === 'TAMPER_DETECTED' ? 'selected' : ''}>🚨 Tamper Detected (Corrupted Block)</option>` : ''}
                             <option value="PENDING_REVIEW" ${tx.investigation_status === 'PENDING_REVIEW' ? 'selected' : ''}>⏳ Pending Officer Review</option>
                             <option value="UNDER_INVESTIGATION" ${tx.investigation_status === 'UNDER_INVESTIGATION' ? 'selected' : ''}>🔍 Under Investigation</option>
                             <option value="RESOLVED_EXPLAINED" ${tx.investigation_status === 'RESOLVED_EXPLAINED' ? 'selected' : ''}>✅ Resolved: Legitimate Dispense Verified</option>
@@ -1195,10 +1258,15 @@ window.saveInvestigationNotes = async function(txId) {
             body: JSON.stringify({ status, notes })
         });
         const data = await res.json();
+
+        // 1. Auto-close the modal dialog
+        closeTxModal();
+
+        // 2. Alert success toast
         showToast("✅ " + data.message);
+
+        // 3. Immediately refresh table so updated verdict and audit status are displayed
         await loadAuditTransactions();
-        // Re-open/refresh modal to show updated status
-        await openTxModal(txId);
     } catch (e) {
         showToast(`❌ Failed to save notes: ${e.message}`, true);
     }

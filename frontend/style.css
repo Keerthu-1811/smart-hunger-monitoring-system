@@ -1476,6 +1476,7 @@ main {
 .inv-badge.resolved { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
 .inv-badge.investigating { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
 .inv-badge.normal { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
+.inv-badge.tampered { background: rgba(244, 63, 94, 0.25); color: #fda4af; border: 1px solid #f43f5e; font-weight: 800; }
 
 /* Modal Styles */
 .modal-backdrop {

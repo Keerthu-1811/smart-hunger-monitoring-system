@@ -202,9 +202,35 @@ function recordTransaction(entry) {
  */
 function getAllTransactions(filter = {}) {
     let list = readTransactions();
+    let expectedPrev = GENESIS_HASH;
+
+    for (let i = 0; i < list.length; i++) {
+        const tx = list[i];
+        const computed = calculateHash(tx.prev_hash, tx);
+        const isTampered = (computed !== tx.current_hash) || (tx.prev_hash !== expectedPrev);
+        tx.chain_index = i;
+        tx.hash_valid = !isTampered;
+        tx.is_tampered = isTampered;
+
+        // If a transaction has been tampered with, its investigation_status should explicitly reflect TAMPER_DETECTED!
+        if (isTampered) {
+            tx.investigation_status = "TAMPER_DETECTED";
+        } else if (!tx.investigation_status) {
+            tx.investigation_status = tx.status === "FLAGGED" ? "PENDING_REVIEW" : "VERIFIED_NORMAL";
+        }
+
+        expectedPrev = tx.current_hash;
+    }
 
     if (filter.status) {
-        list = list.filter(t => t.status.toUpperCase() === filter.status.toUpperCase());
+        const s = filter.status.toUpperCase();
+        if (s === "FLAGGED") {
+            list = list.filter(t => t.status === "FLAGGED" || t.is_tampered);
+        } else if (s === "APPROVED") {
+            list = list.filter(t => (t.status === "APPROVED" || t.officer_resolution === "APPROVED_BY_OFFICER") && !t.is_tampered);
+        } else {
+            list = list.filter(t => t.status.toUpperCase() === s);
+        }
     }
     if (filter.shop_id) {
         list = list.filter(t => t.shop_id.toLowerCase().includes(filter.shop_id.toLowerCase().trim()));
@@ -242,7 +268,9 @@ function getTransactionById(txId) {
         chain_index: index,
         canonical_string: canonicalString,
         computed_hash: computedHash,
-        hash_valid: isValid
+        hash_valid: isValid,
+        is_tampered: !isValid,
+        investigation_status: !isValid ? "TAMPER_DETECTED" : (tx.investigation_status || (tx.status === "FLAGGED" ? "PENDING_REVIEW" : "VERIFIED_NORMAL"))
     };
 }
 
@@ -255,7 +283,18 @@ function updateInvestigation(txId, status, notes) {
     const tx = list.find(t => t.id === txId);
     if (!tx) return { success: false, error: "Transaction not found" };
 
-    if (status) tx.investigation_status = status;
+    if (status) {
+        tx.investigation_status = status;
+        if (status === "RESOLVED_EXPLAINED" || status === "VERIFIED_NORMAL") {
+            tx.officer_resolution = "APPROVED_BY_OFFICER";
+        } else if (status === "RESOLVED_PENALIZED") {
+            tx.officer_resolution = "PENALIZED_FRAUD";
+        } else if (status === "UNDER_INVESTIGATION") {
+            tx.officer_resolution = "UNDER_REVIEW";
+        } else if (status === "PENDING_REVIEW") {
+            tx.officer_resolution = "PENDING_REVIEW";
+        }
+    }
     if (notes !== undefined) tx.officer_notes = notes;
     tx.investigated_at = new Date().toISOString();
 
@@ -275,7 +314,9 @@ function tamperWithTransaction(targetIndex = null) {
         return { success: false, error: "No transactions in ledger to tamper with." };
     }
 
-    backupForRepair = JSON.parse(JSON.stringify(list));
+    if (!backupForRepair) {
+        backupForRepair = JSON.parse(JSON.stringify(list));
+    }
 
     const idx = targetIndex !== null && targetIndex >= 0 && targetIndex < list.length
         ? targetIndex
@@ -287,6 +328,7 @@ function tamperWithTransaction(targetIndex = null) {
 
     // Directly alter recorded weight in raw ledger file (simulating malicious database edit)
     targetTx.measured_weight = tamperedWeight;
+    targetTx.investigation_status = "TAMPER_DETECTED";
     writeTransactions(list);
 
     return {
@@ -373,7 +415,18 @@ function verifyChainIntegrity() {
  */
 function getFlaggedCount() {
     const list = readTransactions();
-    return list.filter(t => t.status === "FLAGGED").length;
+    let expectedPrev = GENESIS_HASH;
+    let count = 0;
+    for (let i = 0; i < list.length; i++) {
+        const tx = list[i];
+        const computed = calculateHash(tx.prev_hash, tx);
+        const isTampered = (computed !== tx.current_hash) || (tx.prev_hash !== expectedPrev);
+        if (tx.status === "FLAGGED" || isTampered) {
+            count++;
+        }
+        expectedPrev = tx.current_hash;
+    }
+    return count;
 }
 
 /**
