@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
 const storage = require("./storage");
+const beneficiaries = require("./beneficiaries");
 
 const app = express();
 
@@ -607,7 +608,79 @@ app.post("/api/test/reset", async (req, res) => {
 });
 
 // ==========================================
-// 4. SERVER START
+// 4. MODULE M1: ENTITLEMENT & BENEFICIARY API
+// ==========================================
+
+/**
+ * GET /api/beneficiaries
+ * List all beneficiaries (supports optional ?shop_id=... or ?card_type=...)
+ */
+app.get("/api/beneficiaries", (req, res) => {
+    try {
+        const { shop_id, card_type } = req.query;
+        let list = beneficiaries.getAllBeneficiaries();
+
+        if (shop_id) {
+            list = list.filter(b => b.assigned_shop_id.toLowerCase().includes(shop_id.toLowerCase().trim()));
+        }
+        if (card_type) {
+            list = list.filter(b => b.card_type.toLowerCase() === card_type.toLowerCase().trim());
+        }
+
+        res.json({
+            count: list.length,
+            beneficiaries: list
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch beneficiaries", details: err.message });
+    }
+});
+
+/**
+ * GET /api/beneficiaries/:cardNo
+ * Fetch exact beneficiary entitlement quota, amount lifted this month, and balance remaining
+ */
+app.get("/api/beneficiaries/:cardNo", (req, res) => {
+    try {
+        const { cardNo } = req.params;
+        const b = beneficiaries.getBeneficiaryByCard(cardNo);
+
+        if (!b) {
+            return res.status(404).json({ error: `Beneficiary with Ration Card '${cardNo}' not found.` });
+        }
+
+        // Calculate remaining quota for each commodity
+        const remaining = {};
+        COMMODITIES.forEach(item => {
+            const quota = Number((b.monthly_quota && b.monthly_quota[item]) || 0);
+            const lifted = Number((b.current_month_lifted && b.current_month_lifted[item]) || 0);
+            remaining[item] = Math.max(0, Number((quota - lifted).toFixed(1)));
+        });
+
+        res.json({
+            ...b,
+            remaining_quota: remaining
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch beneficiary details", details: err.message });
+    }
+});
+
+/**
+ * POST /api/beneficiaries/reset
+ * Resets beneficiaries list to factory defaults
+ */
+app.post("/api/beneficiaries/reset", (req, res) => {
+    try {
+        const resetList = beneficiaries.resetBeneficiaries();
+        res.json({ message: "Beneficiary database reset to default state.", count: resetList.length });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to reset beneficiaries", details: err.message });
+    }
+});
+
+// ==========================================
+// 5. SERVER START
 // ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -383,7 +383,169 @@ document.getElementById("toggleSimBtn").addEventListener("click", () => {
 });
 
 // ==========================================
-// 8. BOOTSTRAP
+// 8. MODULE M1: BENEFICIARY ENTITLEMENT LOOKUP
+// ==========================================
+window.lookupBeneficiary = async function(cardNo) {
+    const input = document.getElementById("cardLookupInput");
+    if (cardNo) input.value = cardNo;
+    const targetCard = (input.value || "TN-PDS-1001").trim();
+
+    const container = document.getElementById("beneficiaryCardContainer");
+    container.innerHTML = `<p class="empty-state">⏳ Fetching entitlement records for ${targetCard}...</p>`;
+
+    try {
+        const res = await fetch(`http://localhost:3000/api/beneficiaries/${encodeURIComponent(targetCard)}`);
+        if (!res.ok) {
+            const errData = await res.json();
+            container.innerHTML = `<div class="empty-state" style="color: #f43f5e;">❌ ${errData.error || 'Beneficiary record not found.'}</div>`;
+            return;
+        }
+
+        const b = await res.json();
+
+        // Build Quota Boxes for all 5 Commodities
+        const commoditiesList = ["Rice", "Sugar", "Wheat", "Toor Dal", "Palm Oil"];
+        const quotaHtml = commoditiesList.map(item => {
+            const icon = COMMODITY_ICONS[item] || "📦";
+            const unit = item === "Palm Oil" ? "L" : "kg";
+            const quota = b.monthly_quota ? (b.monthly_quota[item] || 0) : 0;
+            const lifted = b.current_month_lifted ? (b.current_month_lifted[item] || 0) : 0;
+            const remaining = b.remaining_quota ? (b.remaining_quota[item] !== undefined ? b.remaining_quota[item] : quota) : quota;
+
+            const percent = quota > 0 ? Math.min(100, Math.round((remaining / quota) * 100)) : 100;
+            const barColor = percent > 50 ? "#10b981" : (percent > 20 ? "#fbbf24" : "#f43f5e");
+
+            return `
+                <div class="quota-box">
+                    <span class="quota-item-title">${icon} ${item}</span>
+                    <div class="quota-remaining-val">${remaining} <span style="font-size: 0.75rem; color: #94a3b8;">${unit} left</span></div>
+                    <div class="weight-progress-bg">
+                        <div class="weight-progress-bar" style="width: ${percent}%; background-color: ${barColor};"></div>
+                    </div>
+                    <div class="quota-numbers">
+                        <span>Quota: <strong>${quota} ${unit}</strong></span>
+                        <span>Lifted: <strong>${lifted} ${unit}</strong></span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="beneficiary-card">
+                <div class="beneficiary-header">
+                    <div>
+                        <h3 class="ben-head-name">${b.family_head_name}</h3>
+                        <div class="ben-card-meta">
+                            <span>💳 Ration Card: <strong style="color: #fff;">${b.ration_card_no}</strong></span>
+                            <span>🔒 Aadhaar: •••• ${b.aadhaar_last4}</span>
+                            <span>👨‍👩‍👧‍👦 Family: ${b.family_members_count} Members</span>
+                        </div>
+                        <div style="margin-top: 0.35rem; font-size: 0.82rem; color: #38bdf8;">
+                            🏬 Registered Center: <strong>${b.assigned_shop_id}</strong>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="card-badge ${b.card_type}">${b.card_type} Quota</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 style="margin: 0 0 0.85rem; font-size: 0.9rem; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.04em;">
+                        📋 Monthly Commodity Quotas & Current Balance
+                    </h4>
+                    <div class="quota-grid">
+                        ${quotaHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (e) {
+        container.innerHTML = `<div class="empty-state" style="color: #f43f5e;">❌ Network error: ${e.message}</div>`;
+    }
+};
+
+document.getElementById("btnLookupCard").addEventListener("click", () => {
+    window.lookupBeneficiary();
+});
+
+document.getElementById("cardLookupInput").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") window.lookupBeneficiary();
+});
+
+// Full Registry Toggle
+let registryLoaded = false;
+document.getElementById("btnToggleRegistry").addEventListener("click", async () => {
+    const wrap = document.getElementById("registryTableContainer");
+    const btn = document.getElementById("btnToggleRegistry");
+
+    if (wrap.style.display === "none") {
+        wrap.style.display = "block";
+        btn.textContent = "Hide Beneficiary Registry";
+        if (!registryLoaded) {
+            await loadBeneficiariesRegistry();
+            registryLoaded = true;
+        }
+    } else {
+        wrap.style.display = "none";
+        btn.textContent = "Show Full 5-Shop Beneficiary Registry (12 Households)";
+    }
+});
+
+async function loadBeneficiariesRegistry() {
+    const container = document.getElementById("registryTableContainer");
+    try {
+        const res = await fetch("http://localhost:3000/api/beneficiaries");
+        const data = await res.json();
+
+        if (!data.beneficiaries || data.beneficiaries.length === 0) {
+            container.innerHTML = '<p class="empty-state">No beneficiaries found.</p>';
+            return;
+        }
+
+        const rows = data.beneficiaries.map(b => `
+            <tr>
+                <td><strong>${b.ration_card_no}</strong></td>
+                <td>${b.family_head_name}</td>
+                <td><span class="card-badge ${b.card_type}">${b.card_type}</span></td>
+                <td>${b.assigned_shop_id}</td>
+                <td>${b.family_members_count}</td>
+                <td>•••• ${b.aadhaar_last4}</td>
+                <td>
+                    ${b.monthly_quota.Rice}kg Rice • ${b.monthly_quota.Sugar}kg Sugar • ${b.monthly_quota.Wheat}kg Wheat
+                </td>
+                <td>
+                    <button class="btn-chip" onclick="lookupBeneficiary('${b.ration_card_no}')">Inspect</button>
+                </td>
+            </tr>
+        `).join('');
+
+        container.innerHTML = `
+            <table class="registry-table">
+                <thead>
+                    <tr>
+                        <th>Ration Card No.</th>
+                        <th>Head of Family</th>
+                        <th>Card Type</th>
+                        <th>Assigned Shop</th>
+                        <th>Family</th>
+                        <th>Aadhaar</th>
+                        <th>Key Quota</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows}
+                </tbody>
+            </table>
+        `;
+    } catch (e) {
+        container.innerHTML = `<p class="empty-state" style="color: #f43f5e;">Failed to load registry: ${e.message}</p>`;
+    }
+}
+
+// ==========================================
+// 9. BOOTSTRAP
 // ==========================================
 loadData();
+window.lookupBeneficiary("TN-PDS-1001");
 setInterval(loadData, 5000);

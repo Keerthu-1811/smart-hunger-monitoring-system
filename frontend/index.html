@@ -165,6 +165,40 @@
                 <p class="empty-state">Loading stock matrix...</p>
             </div>
         </section>
+
+        <!-- 5. Module M1: Beneficiary Entitlement Directory -->
+        <section class="panel beneficiary-panel">
+            <div class="panel-header-with-badge">
+                <div>
+                    <h2>👥 Module M1: PDS Beneficiary Entitlement Directory</h2>
+                    <p class="panel-desc">Simulated Aadhaar / Ration Card database providing monthly quota entitlements across the 5 commodities.</p>
+                </div>
+                <div class="quick-cards-group">
+                    <span class="quick-label">Sample Cards:</span>
+                    <button class="btn-chip" onclick="lookupBeneficiary('TN-PDS-1001')">TN-PDS-1001 (AAY)</button>
+                    <button class="btn-chip" onclick="lookupBeneficiary('TN-PDS-2002')">TN-PDS-2002 (PHH)</button>
+                    <button class="btn-chip" onclick="lookupBeneficiary('TN-PDS-5002')">TN-PDS-5002 (NPHH)</button>
+                </div>
+            </div>
+
+            <div class="beneficiary-lookup-bar">
+                <input type="text" id="cardLookupInput" placeholder="Enter Ration Card No. (e.g., TN-PDS-1001)..." value="TN-PDS-1001">
+                <button class="btn btn-primary" id="btnLookupCard">🔍 Fetch Entitlement</button>
+            </div>
+
+            <!-- Single Beneficiary Card Display -->
+            <div id="beneficiaryCardContainer" class="beneficiary-result-box">
+                <p class="empty-state">Enter a Ration Card number or click a sample card above to inspect live entitlements.</p>
+            </div>
+
+            <!-- Full Beneficiaries Registry Table (Collapsible) -->
+            <div class="registry-toggle-row">
+                <button class="btn-toggle" id="btnToggleRegistry">Show Full 5-Shop Beneficiary Registry (12 Households)</button>
+            </div>
+            <div id="registryTableContainer" class="registry-table-wrap" style="display: none;">
+                <p class="empty-state">Loading registry...</p>
+            </div>
+        </section>
     </main>
 
     <footer>
