@@ -239,6 +239,49 @@ function updateLiftedQuota(cardNo, item, amount) {
 }
 
 /**
+ * Add / Refill monthly quota for a beneficiary
+ */
+function addCustomerQuota(cardNo, item, amount) {
+    const list = readBeneficiaries();
+    const beneficiary = list.find(b => b.ration_card_no.toUpperCase() === cardNo.trim().toUpperCase());
+    if (!beneficiary) return { success: false, error: "Beneficiary not found" };
+
+    if (!beneficiary.monthly_quota) {
+        beneficiary.monthly_quota = { "Rice": 20, "Sugar": 5, "Wheat": 10, "Toor Dal": 2, "Palm Oil": 2 };
+    }
+    if (!beneficiary.current_month_lifted) {
+        beneficiary.current_month_lifted = { "Rice": 0, "Sugar": 0, "Wheat": 0, "Toor Dal": 0, "Palm Oil": 0 };
+    }
+
+    const currentQuota = Number(beneficiary.monthly_quota[item] || 0);
+    const newQuota = Number((currentQuota + Number(amount)).toFixed(1));
+    beneficiary.monthly_quota[item] = newQuota;
+
+    writeBeneficiaries(list);
+
+    const lifted = Number(beneficiary.current_month_lifted[item] || 0);
+    return {
+        success: true,
+        beneficiary,
+        new_quota: newQuota,
+        remaining_quota: Math.max(0, Number((newQuota - lifted).toFixed(1)))
+    };
+}
+
+/**
+ * Reset lifted amounts for a specific beneficiary (e.g. month rollover or replenishment)
+ */
+function resetCustomerLifted(cardNo) {
+    const list = readBeneficiaries();
+    const beneficiary = list.find(b => b.ration_card_no.toUpperCase() === cardNo.trim().toUpperCase());
+    if (!beneficiary) return { success: false, error: "Beneficiary not found" };
+
+    beneficiary.current_month_lifted = { "Rice": 0, "Sugar": 0, "Wheat": 0, "Toor Dal": 0, "Palm Oil": 0 };
+    writeBeneficiaries(list);
+    return { success: true, beneficiary };
+}
+
+/**
  * Reset beneficiaries to initial state
  */
 function resetBeneficiaries() {
@@ -251,5 +294,7 @@ module.exports = {
     getBeneficiaryByCard,
     getBeneficiariesByShop,
     updateLiftedQuota,
+    addCustomerQuota,
+    resetCustomerLifted,
     resetBeneficiaries
 };

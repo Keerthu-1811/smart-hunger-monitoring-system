@@ -46,5 +46,37 @@
     "violations": [],
     "prev_hash": "6d20a5332a3720250cb957f4aead94774a4696473e40f271c95acaf22f81a0b5",
     "current_hash": "e563fcd55d6bcde9ecdc464ed5baee45c944b9d8084f4822d77453a7f2158bf9"
+  },
+  {
+    "id": "TX-1789322631497-7694",
+    "timestamp": "2026-09-13T18:03:51.497Z",
+    "card_no": "TN-PDS-1001",
+    "beneficiary_name": "Muthu Kumar S",
+    "shop_id": "Shop 1 (Central Hub)",
+    "claimed_commodity": "Rice",
+    "claimed_amount": 5,
+    "measured_weight": 5,
+    "vision_commodity": "Rice",
+    "vision_confidence": 100,
+    "status": "APPROVED",
+    "violations": [],
+    "prev_hash": "e563fcd55d6bcde9ecdc464ed5baee45c944b9d8084f4822d77453a7f2158bf9",
+    "current_hash": "5bd7655042a48674ae3dfdd37b691a0aab51604f4a7cdacf5ef4c49b62a7796e"
+  },
+  {
+    "id": "TX-1789323079616-2910",
+    "timestamp": "2026-09-13T18:11:19.616Z",
+    "card_no": "TN-PDS-1001",
+    "beneficiary_name": "Muthu Kumar S",
+    "shop_id": "Shop 1 (Central Hub)",
+    "claimed_commodity": "Rice",
+    "claimed_amount": 5,
+    "measured_weight": 5,
+    "vision_commodity": "Rice",
+    "vision_confidence": 99,
+    "status": "APPROVED",
+    "violations": [],
+    "prev_hash": "5bd7655042a48674ae3dfdd37b691a0aab51604f4a7cdacf5ef4c49b62a7796e",
+    "current_hash": "d08d031deb15aadea85e02ab3c6e078dff7fecfecab68f3559b6d2c40e383cec"
   }
 ]

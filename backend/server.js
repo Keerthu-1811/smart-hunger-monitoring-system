@@ -578,17 +578,33 @@ app.post("/api/test/adjust", async (req, res) => {
             return res.status(400).json({ error: "device_id and weight required" });
         }
 
+        const shop = normalizeShop(device_id);
+        const item = normalizeCommodity(item_name);
+        const stockDetails = await getCurrentShopStockDetails(shop, item);
+
+        const newWeight = Number(weight);
+        const prevWeight = stockDetails.weight;
+        const diff = newWeight - prevWeight;
+
+        // If weight increased, add to total deliveries; preserve historical consumption
+        const newTotal = total_weight !== undefined
+            ? Number(total_weight)
+            : (diff > 0 ? Number((stockDetails.total_weight + diff).toFixed(1)) : Math.max(newWeight, stockDetails.total_weight));
+        const newConsumed = consumed_weight !== undefined
+            ? Number(consumed_weight)
+            : stockDetails.consumed_weight;
+
         const reading = {
-            device_id: normalizeShop(device_id),
-            item_name: normalizeCommodity(item_name),
-            weight: Number(weight),
-            total_weight: total_weight !== undefined ? Number(total_weight) : Number(weight),
-            consumed_weight: consumed_weight !== undefined ? Number(consumed_weight) : 0,
+            device_id: shop,
+            item_name: item,
+            weight: newWeight,
+            total_weight: newTotal,
+            consumed_weight: newConsumed,
             created_at: new Date().toISOString()
         };
 
         await storage.insertReadings([reading]);
-        res.json({ message: "Stock adjusted successfully", reading });
+        res.json({ message: `Stock updated for ${item} at ${shop}: ${newWeight} kg/L`, reading });
     } catch (err) {
         console.error("Error adjusting stock:", err);
         res.status(500).json({ error: "Failed to adjust stock", details: err.message });
@@ -684,20 +700,69 @@ app.post("/api/beneficiaries/reset", (req, res) => {
 // 5. MODULE M2 & M3 REPLICATION + M4 VERIFICATION & M5 AUDIT LOG
 // ==========================================
 
-async function getCurrentShopStock(shopId, commodity) {
+async function getCurrentShopStockDetails(shopId, commodity) {
     try {
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         const rawData = await storage.getReadingsSince(twentyFourHoursAgo);
         const shopNorm = normalizeShop(shopId);
         const itemNorm = normalizeCommodity(commodity);
         const readings = rawData.filter(r => normalizeShop(r.device_id) === shopNorm && normalizeCommodity(r.item_name) === itemNorm);
-        if (readings.length === 0) return 50.0;
+        if (readings.length === 0) return { weight: 50.0, total_weight: 50.0, consumed_weight: 0.0 };
         readings.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-        return Number(readings[readings.length - 1].weight);
+        const latest = readings[readings.length - 1];
+        return {
+            weight: Number(latest.weight),
+            total_weight: Number(latest.total_weight !== undefined ? latest.total_weight : latest.weight),
+            consumed_weight: Number(latest.consumed_weight !== undefined ? latest.consumed_weight : 0)
+        };
     } catch (e) {
-        return 50.0;
+        return { weight: 50.0, total_weight: 50.0, consumed_weight: 0.0 };
     }
 }
+
+async function getCurrentShopStock(shopId, commodity) {
+    const details = await getCurrentShopStockDetails(shopId, commodity);
+    return details.weight;
+}
+
+/**
+ * POST /api/beneficiaries/add-quota
+ * Adds / refills entitlement quota for a specific customer
+ */
+app.post("/api/beneficiaries/add-quota", (req, res) => {
+    try {
+        const { card_no, item, amount } = req.body || {};
+        if (!card_no || !item || amount === undefined) {
+            return res.status(400).json({ error: "Missing card_no, item, or amount" });
+        }
+        const result = beneficiaries.addCustomerQuota(card_no, item, Number(amount));
+        if (!result.success) {
+            return res.status(404).json({ error: result.error });
+        }
+        res.json({
+            message: `Added ${amount} kg/L to ${item} quota for ${card_no}.`,
+            ...result
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to add quota", details: err.message });
+    }
+});
+
+/**
+ * POST /api/beneficiaries/reset-customer
+ * Resets lifted amounts for a specific customer
+ */
+app.post("/api/beneficiaries/reset-customer", (req, res) => {
+    try {
+        const { card_no } = req.body || {};
+        if (!card_no) return res.status(400).json({ error: "Missing card_no" });
+        const result = beneficiaries.resetCustomerLifted(card_no);
+        if (!result.success) return res.status(404).json({ error: result.error });
+        res.json({ message: `Monthly lifted amounts reset to 0 for ${card_no}.`, ...result });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to reset customer quota", details: err.message });
+    }
+});
 
 /**
  * POST /api/verify
@@ -741,27 +806,34 @@ app.post("/api/dispense", async (req, res) => {
         const commodity = normalizeCommodity(claimed_commodity);
         const weight = Number(measured_weight);
 
-        const currentStock = await getCurrentShopStock(shop, commodity);
+        const stockDetails = await getCurrentShopStockDetails(shop, commodity);
+        const currentStock = stockDetails.weight;
+
         const verification = transactions.verifyThreeWayAgreement({
             card_no,
             shop_id: shop,
             claimed_commodity: commodity,
             claimed_amount: Number(claimed_amount || weight),
             measured_weight: weight,
-            vision_commodity,
-            vision_confidence
+            vision_commodity: vision_commodity || commodity,
+            vision_confidence: vision_confidence || 99.0
         }, currentStock);
 
         let newShopStock = currentStock;
         let quotaUpdate = null;
 
         if (verification.verified) {
-            // 1. Decrement shop stock in inventory
+            // 1. Decrement shop stock in inventory and update consumed/total
             newShopStock = Math.max(0, Number((currentStock - weight).toFixed(1)));
+            const newConsumed = Number((stockDetails.consumed_weight + weight).toFixed(1));
+            const newTotal = Math.max(stockDetails.total_weight, Number((newShopStock + newConsumed).toFixed(1)));
+
             await storage.insertReadings([{
                 device_id: shop,
                 item_name: commodity,
                 weight: newShopStock,
+                total_weight: newTotal,
+                consumed_weight: newConsumed,
                 created_at: new Date().toISOString()
             }]);
 
@@ -778,7 +850,7 @@ app.post("/api/dispense", async (req, res) => {
             claimed_amount: Number(claimed_amount || weight),
             measured_weight: weight,
             vision_commodity: vision_commodity || commodity,
-            vision_confidence: vision_confidence || 99.0,
+            vision_confidence: Number(vision_confidence || 99.0),
             status: verification.status,
             violations: verification.violations
         });

@@ -457,10 +457,66 @@ window.lookupBeneficiary = async function(cardNo) {
                         ${quotaHtml}
                     </div>
                 </div>
+
+                <!-- Customer Quota Management Actions -->
+                <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+                    <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Customer Quota Actions:</span>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn-chip" onclick="refillCustomerQuota('${b.ration_card_no}', 'Rice', 5)">➕ Add 5kg Rice Quota</button>
+                        <button class="btn-chip" onclick="refillCustomerQuota('${b.ration_card_no}', 'Sugar', 2)">➕ Add 2kg Sugar Quota</button>
+                        <button class="btn-chip" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4);" onclick="resetCustomerQuota('${b.ration_card_no}')">🔄 Reset Monthly Lifted</button>
+                    </div>
+                </div>
             </div>
         `;
     } catch (e) {
         container.innerHTML = `<div class="empty-state" style="color: #f43f5e;">❌ Network error: ${e.message}</div>`;
+    }
+};
+
+window.refillCustomerQuota = async function(cardNo, item, amount) {
+    showToast(`⏳ Adding ${amount} kg to ${item} quota for ${cardNo}...`);
+    try {
+        const res = await fetch("http://localhost:3000/api/beneficiaries/add-quota", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ card_no: cardNo, item, amount })
+        });
+        const data = await res.json();
+        showToast(`✅ ${data.message}`);
+
+        // Update all customer parts
+        await window.lookupBeneficiary(cardNo);
+        await onStationBeneficiaryChange();
+        const wrap = document.getElementById("registryTableContainer");
+        if (wrap && wrap.style.display !== "none") {
+            await loadBeneficiariesRegistry();
+        }
+    } catch (e) {
+        showToast(`❌ Failed to add quota: ${e.message}`, true);
+    }
+};
+
+window.resetCustomerQuota = async function(cardNo) {
+    showToast(`⏳ Resetting lifted amounts for ${cardNo}...`);
+    try {
+        const res = await fetch("http://localhost:3000/api/beneficiaries/reset-customer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ card_no: cardNo })
+        });
+        const data = await res.json();
+        showToast(`✅ ${data.message}`);
+
+        // Update all customer parts
+        await window.lookupBeneficiary(cardNo);
+        await onStationBeneficiaryChange();
+        const wrap = document.getElementById("registryTableContainer");
+        if (wrap && wrap.style.display !== "none") {
+            await loadBeneficiariesRegistry();
+        }
+    } catch (e) {
+        showToast(`❌ Failed to reset quota: ${e.message}`, true);
     }
 };
 
@@ -544,7 +600,7 @@ async function loadBeneficiariesRegistry() {
 }
 
 // ==========================================
-// 9. MODULE M2 & M3 HARDWARE REPLICATORS + 3-WAY VERIFICATION (M4)
+// 9. MODULE M2 & M3 REPLICATORS + 3-WAY VERIFICATION (M4)
 // ==========================================
 
 let currentStationBeneficiary = null;
@@ -563,8 +619,6 @@ async function initStation() {
         `).join('');
 
         await onStationBeneficiaryChange();
-        updateScaleDisplay(document.getElementById("m2WeightInput").value);
-        updateVisionClassifierDisplay();
     } catch (e) {
         console.error("Error initializing verification station:", e);
     }
@@ -594,8 +648,9 @@ window.onStationBeneficiaryChange = async function() {
 
 window.onStationCommodityChange = function() {
     const item = document.getElementById("dispenseCommoditySelect").value;
-    const unit = item === "Palm Oil" ? "L" : "KG";
-    document.getElementById("lcdUnit").innerText = unit;
+    const unit = item === "Palm Oil" ? "L" : "kg";
+    const unitBadge = document.getElementById("scaleInputUnit");
+    if (unitBadge) unitBadge.innerText = unit;
     updateStationQuotaPill();
 };
 
@@ -609,63 +664,23 @@ function updateStationQuotaPill() {
     document.getElementById("stQuotaVal").innerText = `${rem} ${unit}`;
 }
 
-// --- M2 Load Cell Scale Simulator ---
-window.updateScaleDisplay = function(val) {
-    const num = parseFloat(val);
-    const digitsEl = document.getElementById("scaleDisplayDigits");
-    if (isNaN(num) || num < 0) {
-        digitsEl.innerText = "ERR.00";
-        digitsEl.style.color = "#ef4444";
-    } else {
-        const formatted = (num < 10 ? "0" : "") + num.toFixed(2);
-        digitsEl.innerText = formatted;
-        digitsEl.style.color = "#34d399";
-    }
-};
-
+// --- M2 Weight Controls ---
 window.setStationWeight = function(w) {
     const input = document.getElementById("m2WeightInput");
-    input.value = w.toFixed(1);
-    updateScaleDisplay(w);
+    if (input) input.value = w.toFixed(1);
 };
 
 window.tareScale = function() {
     const input = document.getElementById("m2WeightInput");
-    input.value = "0.0";
-    updateScaleDisplay(0.0);
+    if (input) input.value = "0.0";
 };
 
-// --- M3 AI Vision Classifier Simulator ---
-window.updateVisionClassifierDisplay = function() {
-    const item = document.getElementById("m3VisionSelect").value;
-    const slider = document.getElementById("m3ConfidenceSlider");
-    const conf = slider ? slider.value : 99;
-    const label = document.getElementById("camOverlayLabel");
-    const box = document.querySelector(".bounding-box");
-
-    if (label) {
-        label.innerText = `${item} [${conf}.0%]`;
-    }
-
-    if (box) {
-        if (item.includes("Foreign") || item.includes("Obscured")) {
-            box.style.borderColor = "#ef4444";
-            box.style.background = "rgba(239, 68, 68, 0.15)";
-            if (label) label.style.background = "#ef4444";
-        } else {
-            box.style.borderColor = "#a855f7";
-            box.style.background = "rgba(168, 85, 247, 0.08)";
-            if (label) label.style.background = "#a855f7";
-        }
-    }
-};
-
+// --- M3 Vision Controls ---
 window.syncVisionWithClaim = function() {
     const claim = document.getElementById("dispenseCommoditySelect").value;
     const visionSelect = document.getElementById("m3VisionSelect");
     if (visionSelect) {
         visionSelect.value = claim;
-        updateVisionClassifierDisplay();
     }
 };
 
@@ -682,7 +697,6 @@ window.loadTestPreset = async function(type) {
         onStationCommodityChange();
         setStationWeight(5.0);
         visionSelect.value = "Rice";
-        updateVisionClassifierDisplay();
     } else if (type === "VISION_MISMATCH") {
         cardSelect.value = "TN-PDS-1001";
         await onStationBeneficiaryChange();
@@ -690,7 +704,6 @@ window.loadTestPreset = async function(type) {
         onStationCommodityChange();
         setStationWeight(5.0);
         visionSelect.value = "Sugar"; // Intentional camera fraud simulation
-        updateVisionClassifierDisplay();
     } else if (type === "QUOTA_EXCEEDED") {
         cardSelect.value = "TN-PDS-1003"; // NPHH card: only 12kg quota
         await onStationBeneficiaryChange();
@@ -698,7 +711,6 @@ window.loadTestPreset = async function(type) {
         onStationCommodityChange();
         setStationWeight(30.0); // 30kg exceeds 12kg quota
         visionSelect.value = "Rice";
-        updateVisionClassifierDisplay();
     } else if (type === "ZERO_WEIGHT") {
         cardSelect.value = "TN-PDS-1001";
         await onStationBeneficiaryChange();
@@ -706,7 +718,6 @@ window.loadTestPreset = async function(type) {
         onStationCommodityChange();
         tareScale(); // 0.0 weight
         visionSelect.value = "Rice";
-        updateVisionClassifierDisplay();
     }
 
     // Auto-run verification check to demonstrate result
@@ -750,11 +761,15 @@ window.executePdsDispense = async function() {
         const data = await res.json();
         renderVerdict(data.verification, data);
 
-        // Refresh all connected dashboard panels
+        // Refresh all connected dashboard panels (Stock matrix, Customer Quotas, Registry, and Audit)
         await loadData();
         await onStationBeneficiaryChange();
         if (window.lookupBeneficiary) {
-            window.lookupBeneficiary(payload.card_no);
+            await window.lookupBeneficiary(payload.card_no);
+        }
+        const wrap = document.getElementById("registryTableContainer");
+        if (wrap && wrap.style.display !== "none") {
+            await loadBeneficiariesRegistry();
         }
         await loadAuditTransactions();
     } catch (e) {
@@ -767,7 +782,6 @@ function getStationPayload() {
     const claimed_commodity = document.getElementById("dispenseCommoditySelect").value;
     const measured_weight = parseFloat(document.getElementById("m2WeightInput").value) || 0;
     const vision_commodity = document.getElementById("m3VisionSelect").value;
-    const vision_confidence = parseFloat(document.getElementById("m3ConfidenceSlider").value) || 99;
     const shop_id = currentStationBeneficiary?.assigned_shop_id || "Shop 1 (Central Hub)";
 
     return {
@@ -777,7 +791,7 @@ function getStationPayload() {
         claimed_amount: measured_weight,
         measured_weight,
         vision_commodity,
-        vision_confidence
+        vision_confidence: 99.0
     };
 }
 

@@ -1069,5 +1069,32 @@
     "total_weight": 0,
     "consumed_weight": 0,
     "created_at": "2026-09-13T17:55:15.326Z"
+  },
+  {
+    "id": 120,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Rice",
+    "weight": 62,
+    "total_weight": 0,
+    "consumed_weight": 0,
+    "created_at": "2026-09-13T18:03:51.494Z"
+  },
+  {
+    "id": 121,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Rice",
+    "weight": 57,
+    "total_weight": 62,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T18:11:19.610Z"
+  },
+  {
+    "id": 122,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Rice",
+    "weight": 77,
+    "total_weight": 82,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T18:11:28.363Z"
   }
 ]

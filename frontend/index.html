@@ -255,35 +255,25 @@
                     </div>
                 </div>
 
-                <!-- Column 2: M2 Load Cell Scale Simulator -->
+                <!-- Column 2: M2 Load Cell Weight Entry -->
                 <div class="station-card col-m2">
                     <div class="station-card-header">
-                        <span class="col-tag m2-tag">M2: Hardware Scale</span>
-                        <h3>⚖️ Load Cell Replicator</h3>
+                        <span class="col-tag m2-tag">M2: Measured Weight</span>
+                        <h3>⚖️ Scale Reading Input</h3>
                     </div>
 
-                    <!-- Digital Scale LCD Display -->
-                    <div class="scale-lcd">
-                        <div class="lcd-header">
-                            <span class="lcd-indicator"><span class="led-blink"></span> STABLE</span>
-                            <span class="lcd-unit" id="lcdUnit">KG</span>
-                        </div>
-                        <div class="lcd-digits" id="scaleDisplayDigits">05.00</div>
-                        <div class="lcd-footer">HX711 24-BIT ADC • TARE: OK</div>
-                    </div>
-
-                    <!-- Manual Weight Input -->
                     <div class="form-group">
-                        <label for="m2WeightInput">Enter Measured Weight (kg / L):</label>
+                        <label for="m2WeightInput">Enter Measured Weight:</label>
                         <div class="weight-input-wrap">
-                            <input type="number" id="m2WeightInput" min="0" max="60" step="0.1" value="5.0" oninput="updateScaleDisplay(this.value)">
-                            <button type="button" class="btn-tare" onclick="tareScale()" title="Tare / Zero Scale">TARE 0</button>
+                            <input type="number" id="m2WeightInput" min="0" max="60" step="0.1" value="5.0">
+                            <span class="input-unit-badge" id="scaleInputUnit">kg</span>
+                            <button type="button" class="btn-tare" onclick="tareScale()" title="Zero Scale Weight">Zero 0</button>
                         </div>
                     </div>
 
                     <!-- Quick Weight Buttons -->
                     <div class="quick-weights">
-                        <span class="quick-title">Quick Presets:</span>
+                        <span class="quick-title">Quick Preset Weights:</span>
                         <div class="btn-group-wrap">
                             <button type="button" class="btn-chip-w" onclick="setStationWeight(1.0)">1 kg</button>
                             <button type="button" class="btn-chip-w" onclick="setStationWeight(2.0)">2 kg</button>
@@ -293,47 +283,38 @@
                             <button type="button" class="btn-chip-w" onclick="setStationWeight(35.0)">35 kg</button>
                         </div>
                     </div>
+
+                    <div class="station-status-pill">
+                        <span>Scale Calibration:</span> <strong style="color: #10b981;">Online & Stable</strong>
+                    </div>
                 </div>
 
-                <!-- Column 3: M3 AI Vision Classifier Simulator -->
+                <!-- Column 3: M3 Vision Commodity Selector -->
                 <div class="station-card col-m3">
                     <div class="station-card-header">
-                        <span class="col-tag m3-tag">M3: AI Camera</span>
-                        <h3>📷 Vision Classifier Replicator</h3>
+                        <span class="col-tag m3-tag">M3: Vision Classifier</span>
+                        <h3>📷 Detected Commodity</h3>
                     </div>
 
-                    <!-- Camera Viewport Simulation -->
-                    <div class="camera-viewport">
-                        <div class="scan-line"></div>
-                        <div class="cam-overlay">
-                            <span class="cam-rec"><span class="rec-dot"></span> LIVE 1080P</span>
-                            <span class="cam-fps">30 FPS</span>
-                        </div>
-                        <div class="bounding-box">
-                            <span class="bb-label" id="camOverlayLabel">Rice [99.2%]</span>
-                        </div>
-                    </div>
-
-                    <!-- Detected Commodity Selector -->
                     <div class="form-group">
-                        <label for="m3VisionSelect">Camera Detected Commodity:</label>
-                        <select id="m3VisionSelect" class="form-select" onchange="updateVisionClassifierDisplay()">
+                        <label for="m3VisionSelect">Commodity Detected by Camera:</label>
+                        <select id="m3VisionSelect" class="form-select">
                             <option value="Rice">Rice 🍚 (Identified Grain)</option>
                             <option value="Sugar">Sugar 🍬 (Refined Crystal)</option>
                             <option value="Wheat">Wheat 🌾 (Whole Grain)</option>
                             <option value="Toor Dal">Toor Dal 🥣 (Split Pigeon Pea)</option>
                             <option value="Palm Oil">Palm Oil 🛢️ (Edible Oil Canister)</option>
                             <option value="Foreign Item">⚠️ Foreign Item / Adulteration</option>
-                            <option value="Packaging Obscured">⚠️ Packaging Obscured / Unidentified</option>
                         </select>
                     </div>
 
-                    <!-- Confidence Slider -->
-                    <div class="confidence-row">
-                        <label>AI Confidence: <strong id="confidenceLabel">99.2%</strong></label>
-                        <input type="range" id="m3ConfidenceSlider" min="50" max="100" value="99" oninput="document.getElementById('confidenceLabel').innerText = this.value + '.0%'; updateVisionClassifierDisplay();">
+                    <div style="margin-top: 0.25rem;">
+                        <button type="button" class="btn-sync-vision" style="width: 100%;" onclick="syncVisionWithClaim()">🔄 Match Claimed Commodity</button>
                     </div>
-                    <button type="button" class="btn-sync-vision" onclick="syncVisionWithClaim()">🔄 Match Claimed Item</button>
+
+                    <div class="station-status-pill">
+                        <span>Classifier Status:</span> <strong style="color: #a855f7;">Optical Feed Active</strong>
+                    </div>
                 </div>
             </div>
 

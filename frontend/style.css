@@ -1043,54 +1043,16 @@ main {
     font-size: 0.95rem;
 }
 
-/* Digital Scale LCD Display (M2) */
-.scale-lcd {
-    background: #04100c;
-    border: 2px solid #065f46;
-    border-radius: 0.65rem;
-    padding: 1rem;
-    box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.15);
+.input-unit-badge {
+    background: #1e293b;
+    border: 1px solid var(--border-light);
+    color: var(--accent);
+    padding: 0 0.85rem;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    font-size: 0.85rem;
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.lcd-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.7rem;
-    color: #059669;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-}
-
-.led-blink {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    background: #10b981;
-    border-radius: 50%;
-    margin-right: 4px;
-    box-shadow: 0 0 8px #10b981;
-}
-
-.lcd-digits {
-    font-family: "Courier New", Courier, monospace;
-    font-size: 2.8rem;
-    font-weight: 900;
-    color: #34d399;
-    text-shadow: 0 0 12px rgba(52, 211, 153, 0.6);
-    letter-spacing: 0.1em;
-    text-align: right;
-    line-height: 1;
-    padding: 0.5rem 0;
-}
-
-.lcd-footer {
-    font-size: 0.65rem;
-    color: #047857;
-    letter-spacing: 0.05em;
-    text-align: center;
+    align-items: center;
 }
 
 .weight-input-wrap {
@@ -1156,90 +1118,17 @@ main {
     border-color: #22c55e;
 }
 
-/* AI Camera Viewport (M3) */
-.camera-viewport {
-    background: #020617;
-    border: 1px solid #334155;
-    border-radius: 0.65rem;
-    height: 125px;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
-}
-
-.scan-line {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: rgba(168, 85, 247, 0.8);
-    box-shadow: 0 0 8px #a855f7;
-    animation: scanAnim 3s infinite linear;
-}
-
-@keyframes scanAnim {
-    0% { top: 0; }
-    50% { top: 100%; }
-    100% { top: 0; }
-}
-
-.cam-overlay {
-    position: absolute;
-    top: 6px;
-    left: 8px;
-    right: 8px;
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.68rem;
-    font-weight: 700;
-    color: #94a3b8;
-}
-
-.rec-dot {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    background: #ef4444;
-    border-radius: 50%;
-    margin-right: 4px;
-    animation: recPulse 1s infinite alternate;
-}
-@keyframes recPulse {
-    from { opacity: 0.3; }
-    to { opacity: 1; }
-}
-
-.bounding-box {
-    border: 2px dashed #a855f7;
-    padding: 0.75rem 1.25rem;
-    border-radius: 6px;
-    background: rgba(168, 85, 247, 0.08);
-    position: relative;
-}
-
-.bb-label {
-    background: #a855f7;
-    color: #ffffff;
-    font-size: 0.72rem;
-    font-weight: 800;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
-    letter-spacing: 0.03em;
-}
-
-.confidence-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
+.station-status-pill {
+    background: #090e18;
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.5rem;
     font-size: 0.78rem;
     color: var(--text-secondary);
-}
-.confidence-row input[type="range"] {
-    accent-color: #a855f7;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
 }
 
 .btn-sync-vision {
