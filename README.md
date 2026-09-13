@@ -2,6 +2,8 @@
 
 An end-to-end IoT-driven inventory management and resource redistribution system. This platform dynamically monitors food stock levels at multiple distribution centers, predicts hunger shortage risks in real-time, and recommends redistribution logisitics to optimize food supply chains.
 
+> 📖 **Comprehensive Documentation**: For full architecture diagrams, hardware pinouts, dynamic risk formulas, matchmaking transfer algorithms, and complete file inventories, see **[COMPREHENSIVE_PROJECT_OVERVIEW.md](COMPREHENSIVE_PROJECT_OVERVIEW.md)**.
+
 ---
 
 ## 🚀 Key Features
@@ -78,7 +80,9 @@ smart-hunger-iot/
 │   ├── index.html               # Main dashboard UI structure
 │   └── style.css                # Premium modern dark-theme dashboard styles
 ├── package.json                 # Node dependencies and execution scripts
+├── COMPREHENSIVE_PROJECT_OVERVIEW.md # Complete architectural & implementation guide
 ├── DOCUMENTATION.md             # Supplemental cleanup & system notes
+├── Software_Requirements_Smart_Hunger_System.docx # Formal SRS document
 └── project_report.txt           # Extensive hardware/performance analysis report
 ```
 

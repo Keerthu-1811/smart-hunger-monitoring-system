@@ -1,5 +1,7 @@
 # Smart Hunger IoT - Current Documentation
 
+> 💡 **Full Project Guide**: For the detailed architectural breakdown, mathematical formulation of dynamic safety buffers and risk prediction, transfer matchmaking algorithms, and complete file inventory, refer to [COMPREHENSIVE_PROJECT_OVERVIEW.md](COMPREHENSIVE_PROJECT_OVERVIEW.md).
+
 ## Overview
 This project monitors food stock levels for multiple distribution centers using microcontroller devices and a web dashboard.
 
