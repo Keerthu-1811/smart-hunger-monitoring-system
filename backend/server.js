@@ -45,12 +45,231 @@ function normalizeCommodity(name) {
     return found || "Rice";
 }
 
+/**
+ * Core Analytics and Matchmaking Calculation Engine
+ */
+function computeAnalyticsAndTransfers(rawData) {
+    // Group data by [shop_id][item_name]
+    const grouped = {};
+    for (const row of rawData) {
+        const shop = normalizeShop(row.device_id);
+        const item = normalizeCommodity(row.item_name);
+
+        if (!grouped[shop]) grouped[shop] = {};
+        if (!grouped[shop][item]) grouped[shop][item] = [];
+        grouped[shop][item].push(row);
+    }
+
+    const allShopKeys = Array.from(new Set([...DEFAULT_SHOPS, ...Object.keys(grouped)])).sort();
+
+    const shopsData = [];
+    const alerts = [];
+    const flatItemsList = [];
+    const latestWeights = {};
+
+    // Track surpluses and deficits by commodity item for matchmaking
+    const surplusesByItem = {};
+    const deficitsByItem = {};
+    COMMODITIES.forEach(c => {
+        surplusesByItem[c] = [];
+        deficitsByItem[c] = [];
+    });
+
+    for (const shopId of allShopKeys) {
+        const shopItems = [];
+
+        for (const commodity of COMMODITIES) {
+            const config = COMMODITY_CONFIG[commodity] || { baseMin: 5, targetBuffer: 3, unit: "kg" };
+            const readings = (grouped[shopId] && grouped[shopId][commodity]) || [];
+
+            if (readings.length === 0) {
+                shopItems.push({
+                    item_name: commodity,
+                    unit: config.unit,
+                    current_weight: null,
+                    total_weight: 0,
+                    consumed_weight: 0,
+                    consumption_rate: "0.00",
+                    avg_consumption: "0.00",
+                    safe_buffer: config.baseMin,
+                    target_level: config.baseMin + config.targetBuffer,
+                    risk_level: "NO DATA",
+                    readings_count: 0
+                });
+                continue;
+            }
+
+            readings.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+            const latest = readings[readings.length - 1];
+            const currentWeight = Number(latest.weight);
+            const totalWeight = Number(latest.total_weight || 0);
+            const consumedWeight = Number(latest.consumed_weight || 0);
+
+            latestWeights[`${shopId}|${commodity}`] = currentWeight;
+
+            // Recent consumption rate
+            let currentRate = 0;
+            if (readings.length >= 2) {
+                const prev = readings[readings.length - 2];
+                if (Number(prev.weight) > currentWeight) {
+                    currentRate = Number(prev.weight) - currentWeight;
+                }
+            }
+
+            // 24-hour average consumption drop
+            let totalDrops = 0;
+            let dropCount = 0;
+            for (let i = 1; i < readings.length; i++) {
+                const diff = Number(readings[i - 1].weight) - Number(readings[i].weight);
+                if (diff > 0) {
+                    totalDrops += diff;
+                    dropCount++;
+                }
+            }
+            const avgConsumption = dropCount > 0 ? (totalDrops / dropCount) : 0;
+
+            // Dynamic Safety Thresholds per commodity
+            const safeBuffer = Math.max(config.baseMin, avgConsumption);
+            const targetLevel = safeBuffer + config.targetBuffer;
+
+            // Risk Evaluation
+            let riskLevel = "NORMAL";
+            if (currentWeight <= safeBuffer) {
+                riskLevel = "HIGH RISK";
+                alerts.push({
+                    type: "HIGH RISK",
+                    shop: shopId,
+                    item: commodity,
+                    weight: currentWeight,
+                    unit: config.unit,
+                    message: `Critical shortage of ${commodity} at ${shopId}! Current stock: ${currentWeight.toFixed(1)} ${config.unit} (Safe minimum: ${safeBuffer.toFixed(1)} ${config.unit}).`
+                });
+            } else if (currentRate > avgConsumption && currentWeight <= targetLevel) {
+                riskLevel = "MEDIUM RISK";
+                alerts.push({
+                    type: "MEDIUM RISK",
+                    shop: shopId,
+                    item: commodity,
+                    weight: currentWeight,
+                    unit: config.unit,
+                    message: `Rapid consumption of ${commodity} at ${shopId}. Velocity (${currentRate.toFixed(1)} ${config.unit}) exceeds 24h average (${avgConsumption.toFixed(1)} ${config.unit}).`
+                });
+            }
+
+            // Matchmaking Buckets per Commodity
+            if (currentWeight > targetLevel && riskLevel === "NORMAL") {
+                surplusesByItem[commodity].push({
+                    shopId,
+                    currentWeight,
+                    targetLevel,
+                    available: currentWeight - targetLevel,
+                    unit: config.unit
+                });
+            } else if (currentWeight < safeBuffer) {
+                deficitsByItem[commodity].push({
+                    shopId,
+                    currentWeight,
+                    safeBuffer,
+                    targetLevel,
+                    needed: targetLevel - currentWeight,
+                    unit: config.unit
+                });
+            }
+
+            const itemSummary = {
+                item_name: commodity,
+                unit: config.unit,
+                current_weight: currentWeight,
+                total_weight: totalWeight,
+                consumed_weight: consumedWeight,
+                consumption_rate: currentRate.toFixed(2),
+                avg_consumption: avgConsumption.toFixed(2),
+                safe_buffer: Number(safeBuffer.toFixed(1)),
+                target_level: Number(targetLevel.toFixed(1)),
+                risk_level: riskLevel,
+                readings_count: readings.length,
+                last_updated: latest.created_at
+            };
+
+            shopItems.push(itemSummary);
+            flatItemsList.push({ shopId, ...itemSummary });
+        }
+
+        shopsData.push({
+            shop_id: shopId,
+            items: shopItems
+        });
+    }
+
+    // Item-Aware Matchmaking Transfers
+    const redistributions = [];
+    let recId = 1;
+
+    for (const commodity of COMMODITIES) {
+        const deficits = deficitsByItem[commodity] || [];
+        const surpluses = surplusesByItem[commodity] || [];
+
+        deficits.sort((a, b) => b.needed - a.needed);
+        surpluses.sort((a, b) => b.available - a.available);
+
+        for (const deficit of deficits) {
+            for (const surplus of surpluses) {
+                if (surplus.available > 0.01 && deficit.needed > 0.01) {
+                    const amountToMove = Math.min(surplus.available, deficit.needed);
+                    const roundedAmount = Number(amountToMove.toFixed(1));
+
+                    if (roundedAmount > 0) {
+                        redistributions.push({
+                            id: `rec-${recId++}`,
+                            item: commodity,
+                            unit: surplus.unit,
+                            source_shop: surplus.shopId,
+                            target_shop: deficit.shopId,
+                            amount: roundedAmount,
+                            source_remaining: Number((surplus.currentWeight - roundedAmount).toFixed(1)),
+                            target_new_total: Number((deficit.currentWeight + roundedAmount).toFixed(1)),
+                            message: `Transfer ${roundedAmount} ${surplus.unit} of ${commodity} from ${surplus.shopId} to ${deficit.shopId}`,
+                            reason: `${deficit.shopId} is critically low (${deficit.currentWeight.toFixed(1)} ${surplus.unit}). ${surplus.shopId} holds a safe surplus (${surplus.currentWeight.toFixed(1)} ${surplus.unit}).`
+                        });
+
+                        surplus.available -= roundedAmount;
+                        deficit.needed -= roundedAmount;
+                        surplus.currentWeight -= roundedAmount;
+                        deficit.currentWeight += roundedAmount;
+                    }
+                }
+            }
+        }
+    }
+
+    const highRiskCount = flatItemsList.filter(i => i.risk_level === "HIGH RISK").length;
+    const mediumRiskCount = flatItemsList.filter(i => i.risk_level === "MEDIUM RISK").length;
+    const normalCount = flatItemsList.filter(i => i.risk_level === "NORMAL").length;
+
+    return {
+        shops: shopsData,
+        commodities: COMMODITIES,
+        summary: {
+            total_shops: allShopKeys.length,
+            total_inventory_lines: flatItemsList.length,
+            high_risk_count: highRiskCount,
+            medium_risk_count: mediumRiskCount,
+            normal_count: normalCount,
+            active_transfers_count: redistributions.length
+        },
+        alerts,
+        redistributions,
+        latestWeights
+    };
+}
+
 // ==========================================
 // 1. INGESTION ENDPOINT: POST /api/fooddata
 // ==========================================
 app.post("/api/fooddata", async (req, res) => {
     try {
-        const payload = req.body;
+        const payload = req.body || [];
         const readings = Array.isArray(payload) ? payload : [payload];
 
         const validReadings = [];
@@ -82,226 +301,12 @@ app.post("/api/fooddata", async (req, res) => {
 // ==========================================
 app.get("/api/data", async (req, res) => {
     try {
-        // Query last 24 hours
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         const rawData = await storage.getReadingsSince(twentyFourHoursAgo);
-
-        // Group data by [shop_id][item_name]
-        const grouped = {};
-        for (const row of rawData) {
-            const shop = normalizeShop(row.device_id);
-            const item = normalizeCommodity(row.item_name);
-
-            if (!grouped[shop]) grouped[shop] = {};
-            if (!grouped[shop][item]) grouped[shop][item] = [];
-            grouped[shop][item].push(row);
-        }
-
-        // Active shops list: ensure default 5 shops exist or include all discovered
-        const allShopKeys = Array.from(new Set([...DEFAULT_SHOPS, ...Object.keys(grouped)])).sort();
-
-        const shopsData = [];
-        const alerts = [];
-        const flatItemsList = [];
-
-        // Track surpluses and deficits by commodity item for matchmaking
-        const surplusesByItem = {};
-        const deficitsByItem = {};
-        COMMODITIES.forEach(c => {
-            surplusesByItem[c] = [];
-            deficitsByItem[c] = [];
-        });
-
-        for (const shopId of allShopKeys) {
-            const shopItems = [];
-
-            for (const commodity of COMMODITIES) {
-                const config = COMMODITY_CONFIG[commodity] || { baseMin: 5, targetBuffer: 3, unit: "kg" };
-                const readings = (grouped[shopId] && grouped[shopId][commodity]) || [];
-
-                if (readings.length === 0) {
-                    // No reading yet for this item in this shop
-                    shopItems.push({
-                        item_name: commodity,
-                        unit: config.unit,
-                        current_weight: null,
-                        total_weight: 0,
-                        consumed_weight: 0,
-                        consumption_rate: "0.00",
-                        avg_consumption: "0.00",
-                        safe_buffer: config.baseMin,
-                        target_level: config.baseMin + config.targetBuffer,
-                        risk_level: "NO DATA",
-                        readings_count: 0
-                    });
-                    continue;
-                }
-
-                // Sort readings by timestamp ascending
-                readings.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-
-                const latest = readings[readings.length - 1];
-                const currentWeight = Number(latest.weight);
-                const totalWeight = Number(latest.total_weight || 0);
-                const consumedWeight = Number(latest.consumed_weight || 0);
-
-                // Recent consumption rate (difference between last 2 readings)
-                let currentRate = 0;
-                if (readings.length >= 2) {
-                    const prev = readings[readings.length - 2];
-                    if (Number(prev.weight) > currentWeight) {
-                        currentRate = Number(prev.weight) - currentWeight;
-                    }
-                }
-
-                // 24-hour average consumption drop
-                let totalDrops = 0;
-                let dropCount = 0;
-                for (let i = 1; i < readings.length; i++) {
-                    const diff = Number(readings[i - 1].weight) - Number(readings[i].weight);
-                    if (diff > 0) {
-                        totalDrops += diff;
-                        dropCount++;
-                    }
-                }
-                const avgConsumption = dropCount > 0 ? (totalDrops / dropCount) : 0;
-
-                // Dynamic Safety Thresholds per commodity
-                const safeBuffer = Math.max(config.baseMin, avgConsumption);
-                const targetLevel = safeBuffer + config.targetBuffer;
-
-                // Risk Evaluation
-                let riskLevel = "NORMAL";
-                if (currentWeight <= safeBuffer) {
-                    riskLevel = "HIGH RISK";
-                    alerts.push({
-                        type: "HIGH RISK",
-                        shop: shopId,
-                        item: commodity,
-                        weight: currentWeight,
-                        unit: config.unit,
-                        message: `Critical shortage of ${commodity} at ${shopId}! Current stock: ${currentWeight.toFixed(1)} ${config.unit} (Safe minimum: ${safeBuffer.toFixed(1)} ${config.unit}).`
-                    });
-                } else if (currentRate > avgConsumption && currentWeight <= targetLevel) {
-                    riskLevel = "MEDIUM RISK";
-                    alerts.push({
-                        type: "MEDIUM RISK",
-                        shop: shopId,
-                        item: commodity,
-                        weight: currentWeight,
-                        unit: config.unit,
-                        message: `Rapid consumption of ${commodity} at ${shopId}. Velocity (${currentRate.toFixed(1)} ${config.unit}) exceeds 24h average (${avgConsumption.toFixed(1)} ${config.unit}).`
-                    });
-                }
-
-                // Matchmaking Buckets per Commodity
-                if (currentWeight > targetLevel && riskLevel === "NORMAL") {
-                    surplusesByItem[commodity].push({
-                        shopId,
-                        currentWeight,
-                        targetLevel,
-                        available: currentWeight - targetLevel,
-                        unit: config.unit
-                    });
-                } else if (currentWeight < safeBuffer) {
-                    deficitsByItem[commodity].push({
-                        shopId,
-                        currentWeight,
-                        safeBuffer,
-                        targetLevel,
-                        needed: targetLevel - currentWeight,
-                        unit: config.unit
-                    });
-                }
-
-                const itemSummary = {
-                    item_name: commodity,
-                    unit: config.unit,
-                    current_weight: currentWeight,
-                    total_weight: totalWeight,
-                    consumed_weight: consumedWeight,
-                    consumption_rate: currentRate.toFixed(2),
-                    avg_consumption: avgConsumption.toFixed(2),
-                    safe_buffer: Number(safeBuffer.toFixed(1)),
-                    target_level: Number(targetLevel.toFixed(1)),
-                    risk_level: riskLevel,
-                    readings_count: readings.length,
-                    last_updated: latest.created_at
-                };
-
-                shopItems.push(itemSummary);
-                flatItemsList.push({ shopId, ...itemSummary });
-            }
-
-            shopsData.push({
-                shop_id: shopId,
-                items: shopItems
-            });
-        }
-
-        // ==========================================
-        // ITEM-AWARE MATCHMAKING REDISTRIBUTION
-        // ==========================================
-        const redistributions = [];
-        let recId = 1;
-
-        for (const commodity of COMMODITIES) {
-            const deficits = deficitsByItem[commodity] || [];
-            const surpluses = surplusesByItem[commodity] || [];
-
-            // Sort deficits by most needy first
-            deficits.sort((a, b) => b.needed - a.needed);
-            // Sort surpluses by largest available first
-            surpluses.sort((a, b) => b.available - a.available);
-
-            for (const deficit of deficits) {
-                for (const surplus of surpluses) {
-                    if (surplus.available > 0.01 && deficit.needed > 0.01) {
-                        const amountToMove = Math.min(surplus.available, deficit.needed);
-                        const roundedAmount = Number(amountToMove.toFixed(1));
-
-                        if (roundedAmount > 0) {
-                            redistributions.push({
-                                id: `rec-${recId++}`,
-                                item: commodity,
-                                unit: surplus.unit,
-                                source_shop: surplus.shopId,
-                                target_shop: deficit.shopId,
-                                amount: roundedAmount,
-                                source_remaining: Number((surplus.currentWeight - roundedAmount).toFixed(1)),
-                                target_new_total: Number((deficit.currentWeight + roundedAmount).toFixed(1)),
-                                message: `Transfer ${roundedAmount} ${surplus.unit} of ${commodity} from ${surplus.shopId} to ${deficit.shopId}`,
-                                reason: `${deficit.shopId} is critically low (${deficit.currentWeight.toFixed(1)} ${surplus.unit}). ${surplus.shopId} holds a safe surplus (${surplus.currentWeight.toFixed(1)} ${surplus.unit}).`
-                            });
-
-                            surplus.available -= roundedAmount;
-                            deficit.needed -= roundedAmount;
-                            surplus.currentWeight -= roundedAmount;
-                            deficit.currentWeight += roundedAmount;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Summary counts
-        const highRiskCount = flatItemsList.filter(i => i.risk_level === "HIGH RISK").length;
-        const mediumRiskCount = flatItemsList.filter(i => i.risk_level === "MEDIUM RISK").length;
-        const normalCount = flatItemsList.filter(i => i.risk_level === "NORMAL").length;
+        const result = computeAnalyticsAndTransfers(rawData);
 
         res.json({
-            shops: shopsData,
-            commodities: COMMODITIES,
-            summary: {
-                total_shops: allShopKeys.length,
-                total_inventory_lines: flatItemsList.length,
-                high_risk_count: highRiskCount,
-                medium_risk_count: mediumRiskCount,
-                normal_count: normalCount,
-                active_transfers_count: redistributions.length
-            },
-            alerts,
-            redistributions,
+            ...result,
             storage: storage.getStorageStatus()
         });
     } catch (err) {
@@ -316,7 +321,7 @@ app.get("/api/data", async (req, res) => {
 
 /**
  * POST /api/test/seed
- * Populates a 24-hour realistic baseline for all 5 shops and all 5 items.
+ * Populates a 100% HEALTHY baseline (all green NORMAL) across all 5 shops and 5 commodities.
  */
 app.post("/api/test/seed", async (req, res) => {
     try {
@@ -325,74 +330,73 @@ app.post("/api/test/seed", async (req, res) => {
         const hour = 60 * 60 * 1000;
         const readings = [];
 
-        // Baseline profile configuration for the 5 shops across 5 items
-        // Designed to showcase realistic distributions: some normal, some surplus, some approaching risk
-        const profiles = [
+        // 100% HEALTHY baseline profiles: every single commodity is well above safe thresholds
+        const healthyProfiles = [
             {
                 shop: "Shop 1 (Central Hub)",
                 items: {
-                    "Rice": { total: 120, consumed: 35, weight: 85 },     // Big Surplus
-                    "Sugar": { total: 50, consumed: 20, weight: 30 },     // Healthy
-                    "Wheat": { total: 70, consumed: 25, weight: 45 },     // Healthy
-                    "Toor Dal": { total: 60, consumed: 15, weight: 45 },  // Big Surplus
-                    "Palm Oil": { total: 40, consumed: 15, weight: 25 }   // Healthy
+                    "Rice": { total: 120, consumed: 35, weight: 85 },     // Healthy / Large Surplus
+                    "Sugar": { total: 60, consumed: 20, weight: 40 },     // Healthy / Surplus
+                    "Wheat": { total: 70, consumed: 20, weight: 50 },     // Healthy / Surplus
+                    "Toor Dal": { total: 60, consumed: 15, weight: 45 },  // Healthy / Large Surplus
+                    "Palm Oil": { total: 50, consumed: 15, weight: 35 }   // Healthy / Surplus
                 }
             },
             {
                 shop: "Shop 2 (North Market)",
                 items: {
-                    "Rice": { total: 100, consumed: 20, weight: 80 },     // Big Surplus
-                    "Sugar": { total: 60, consumed: 15, weight: 45 },     // Surplus
-                    "Wheat": { total: 80, consumed: 25, weight: 55 },     // Surplus
-                    "Toor Dal": { total: 40, consumed: 20, weight: 20 },  // Normal
-                    "Palm Oil": { total: 50, consumed: 15, weight: 35 }   // Surplus
+                    "Rice": { total: 110, consumed: 30, weight: 80 },     // Healthy / Large Surplus
+                    "Sugar": { total: 60, consumed: 15, weight: 45 },     // Healthy / Surplus
+                    "Wheat": { total: 80, consumed: 25, weight: 55 },     // Healthy / Surplus
+                    "Toor Dal": { total: 50, consumed: 15, weight: 35 },  // Healthy / Surplus
+                    "Palm Oil": { total: 50, consumed: 15, weight: 35 }   // Healthy / Surplus
                 }
             },
             {
                 shop: "Shop 3 (South Depot)",
                 items: {
-                    "Rice": { total: 80, consumed: 72, weight: 8 },       // Critical Shortage (<10 kg)
-                    "Sugar": { total: 40, consumed: 22, weight: 18 },     // Normal
-                    "Wheat": { total: 60, consumed: 40, weight: 20 },     // Normal
-                    "Toor Dal": { total: 35, consumed: 31, weight: 4 },   // Critical Shortage (<5 kg)
-                    "Palm Oil": { total: 30, consumed: 18, weight: 12 }   // Normal
+                    "Rice": { total: 80, consumed: 40, weight: 40 },      // Healthy (Safe min: 10 kg)
+                    "Sugar": { total: 40, consumed: 18, weight: 22 },     // Healthy (Safe min: 5 kg)
+                    "Wheat": { total: 60, consumed: 30, weight: 30 },     // Healthy (Safe min: 8 kg)
+                    "Toor Dal": { total: 40, consumed: 18, weight: 22 },  // Healthy (Safe min: 5 kg)
+                    "Palm Oil": { total: 35, consumed: 15, weight: 20 }   // Healthy (Safe min: 5 L)
                 }
             },
             {
                 shop: "Shop 4 (East District)",
                 items: {
-                    "Rice": { total: 90, consumed: 45, weight: 45 },      // Normal
-                    "Sugar": { total: 35, consumed: 31, weight: 4 },      // Critical Shortage (<5 kg)
-                    "Wheat": { total: 50, consumed: 32, weight: 18 },     // Rapid Consumption
-                    "Toor Dal": { total: 40, consumed: 22, weight: 18 },  // Normal
-                    "Palm Oil": { total: 40, consumed: 20, weight: 20 }   // Normal
+                    "Rice": { total: 90, consumed: 45, weight: 45 },      // Healthy
+                    "Sugar": { total: 45, consumed: 20, weight: 25 },     // Healthy
+                    "Wheat": { total: 55, consumed: 25, weight: 30 },     // Healthy
+                    "Toor Dal": { total: 40, consumed: 18, weight: 22 },  // Healthy
+                    "Palm Oil": { total: 40, consumed: 18, weight: 22 }   // Healthy
                 }
             },
             {
                 shop: "Shop 5 (West Center)",
                 items: {
-                    "Rice": { total: 85, consumed: 45, weight: 40 },      // Normal
-                    "Sugar": { total: 45, consumed: 20, weight: 25 },     // Normal
-                    "Wheat": { total: 70, consumed: 64, weight: 6 },      // Critical Shortage (<8 kg)
-                    "Toor Dal": { total: 35, consumed: 20, weight: 15 },  // Normal
-                    "Palm Oil": { total: 35, consumed: 32, weight: 3 }    // Critical Shortage (<5 L)
+                    "Rice": { total: 85, consumed: 40, weight: 45 },      // Healthy
+                    "Sugar": { total: 45, consumed: 20, weight: 25 },     // Healthy
+                    "Wheat": { total: 65, consumed: 30, weight: 35 },     // Healthy
+                    "Toor Dal": { total: 40, consumed: 20, weight: 20 },  // Healthy
+                    "Palm Oil": { total: 40, consumed: 18, weight: 22 }   // Healthy
                 }
             }
         ];
 
-        // Generate a 4-step progressive history over 12 hours for each item
-        for (const p of profiles) {
+        // 4-step progressive history over 12 hours
+        for (const p of healthyProfiles) {
             for (const [commodity, target] of Object.entries(p.items)) {
-                const initWeight = target.weight + 15;
-                const midWeight1 = target.weight + 10;
-                const midWeight2 = target.weight + 4;
+                const initWeight = target.weight + 12;
+                const midWeight1 = target.weight + 8;
+                const midWeight2 = target.weight + 3;
                 const finalWeight = target.weight;
 
                 readings.push({
                     device_id: p.shop,
                     item_name: commodity,
                     total_weight: target.total,
-                    consumed_weight: Math.max(0, target.consumed - 15),
+                    consumed_weight: Math.max(0, target.consumed - 12),
                     weight: initWeight,
                     created_at: new Date(now - 12 * hour).toISOString()
                 });
@@ -400,7 +404,7 @@ app.post("/api/test/seed", async (req, res) => {
                     device_id: p.shop,
                     item_name: commodity,
                     total_weight: target.total,
-                    consumed_weight: Math.max(0, target.consumed - 10),
+                    consumed_weight: Math.max(0, target.consumed - 8),
                     weight: midWeight1,
                     created_at: new Date(now - 8 * hour).toISOString()
                 });
@@ -408,7 +412,7 @@ app.post("/api/test/seed", async (req, res) => {
                     device_id: p.shop,
                     item_name: commodity,
                     total_weight: target.total,
-                    consumed_weight: Math.max(0, target.consumed - 4),
+                    consumed_weight: Math.max(0, target.consumed - 3),
                     weight: midWeight2,
                     created_at: new Date(now - 3 * hour).toISOString()
                 });
@@ -425,9 +429,9 @@ app.post("/api/test/seed", async (req, res) => {
 
         await storage.insertReadings(readings);
         res.json({
-            message: "Successfully seeded 5 shops with 5 items (24h baseline created)",
+            message: "Successfully seeded healthy baseline across all 5 shops & 5 commodities! All systems normal.",
             totalReadings: readings.length,
-            shops: profiles.map(p => p.shop),
+            shops: healthyProfiles.map(p => p.shop),
             commodities: COMMODITIES
         });
     } catch (err) {
@@ -438,25 +442,25 @@ app.post("/api/test/seed", async (req, res) => {
 
 /**
  * POST /api/test/shortage
- * Simulates severe emergency shortages on specific items.
+ * Simulates severe emergency shortages on specific items to test alert generation and matchmaking.
  */
 app.post("/api/test/shortage", async (req, res) => {
     try {
         const now = new Date().toISOString();
         const shortageReadings = [
-            // Shop 3: Rice drops to 3.0 kg, Toor Dal drops to 1.5 kg
-            { device_id: "Shop 3 (South Depot)", item_name: "Rice", weight: 3.0, total_weight: 80, consumed_weight: 77, created_at: now },
-            { device_id: "Shop 3 (South Depot)", item_name: "Toor Dal", weight: 1.5, total_weight: 35, consumed_weight: 33.5, created_at: now },
-            // Shop 4: Sugar drops to 2.0 kg
-            { device_id: "Shop 4 (East District)", item_name: "Sugar", weight: 2.0, total_weight: 35, consumed_weight: 33, created_at: now },
-            // Shop 5: Wheat drops to 3.0 kg, Palm Oil drops to 1.0 L
-            { device_id: "Shop 5 (West Center)", item_name: "Wheat", weight: 3.0, total_weight: 70, consumed_weight: 67, created_at: now },
-            { device_id: "Shop 5 (West Center)", item_name: "Palm Oil", weight: 1.0, total_weight: 35, consumed_weight: 34, created_at: now }
+            // Shop 3: Rice drops to 4.0 kg (Safe min: 10 kg), Toor Dal drops to 2.0 kg (Safe min: 5 kg)
+            { device_id: "Shop 3 (South Depot)", item_name: "Rice", weight: 4.0, total_weight: 80, consumed_weight: 76, created_at: now },
+            { device_id: "Shop 3 (South Depot)", item_name: "Toor Dal", weight: 2.0, total_weight: 40, consumed_weight: 38, created_at: now },
+            // Shop 4: Sugar drops to 2.5 kg (Safe min: 5 kg)
+            { device_id: "Shop 4 (East District)", item_name: "Sugar", weight: 2.5, total_weight: 45, consumed_weight: 42.5, created_at: now },
+            // Shop 5: Wheat drops to 3.5 kg (Safe min: 8 kg), Palm Oil drops to 1.5 L (Safe min: 5 L)
+            { device_id: "Shop 5 (West Center)", item_name: "Wheat", weight: 3.5, total_weight: 65, consumed_weight: 61.5, created_at: now },
+            { device_id: "Shop 5 (West Center)", item_name: "Palm Oil", weight: 1.5, total_weight: 40, consumed_weight: 38.5, created_at: now }
         ];
 
         await storage.insertReadings(shortageReadings);
         res.json({
-            message: "Emergency shortage spikes injected across multiple shops & commodities!",
+            message: "Emergency shortage spikes injected across 5 commodities! Critical alerts and transfer recommendations generated.",
             shortagesTriggered: shortageReadings
         });
     } catch (err) {
@@ -467,19 +471,19 @@ app.post("/api/test/shortage", async (req, res) => {
 
 /**
  * POST /api/test/apply-transfer
- * Executes active redistribution transfer recommendations in the database.
+ * Executes redistribution transfers: supports single transfer OR all active recommendations.
  */
 app.post("/api/test/apply-transfer", async (req, res) => {
     try {
-        const { source_shop, target_shop, item_name, amount } = req.body;
+        const body = req.body || {};
+        const { source_shop, target_shop, item_name, amount } = body;
         const now = new Date().toISOString();
 
-        if (source_shop && target_shop && item_name && amount) {
-            // Apply single specified transfer
-            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-            const rawData = await storage.getReadingsSince(twentyFourHoursAgo);
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const rawData = await storage.getReadingsSince(twentyFourHoursAgo);
 
-            // Find current weights
+        // CASE A: Execute Single Specified Transfer
+        if (source_shop && target_shop && item_name && amount) {
             const srcReadings = rawData.filter(r => normalizeShop(r.device_id) === normalizeShop(source_shop) && normalizeCommodity(r.item_name) === normalizeCommodity(item_name));
             const tgtReadings = rawData.filter(r => normalizeShop(r.device_id) === normalizeShop(target_shop) && normalizeCommodity(r.item_name) === normalizeCommodity(item_name));
 
@@ -487,8 +491,8 @@ app.post("/api/test/apply-transfer", async (req, res) => {
             const tgtCurrent = tgtReadings.length > 0 ? Number(tgtReadings[tgtReadings.length - 1].weight) : 0;
 
             const transferAmt = Number(amount);
-            const newSrcWeight = Math.max(0, srcCurrent - transferAmt);
-            const newTgtWeight = tgtCurrent + transferAmt;
+            const newSrcWeight = Math.max(0, Number((srcCurrent - transferAmt).toFixed(1)));
+            const newTgtWeight = Number((tgtCurrent + transferAmt).toFixed(1));
 
             await storage.insertReadings([
                 { device_id: source_shop, item_name, weight: newSrcWeight, created_at: now },
@@ -497,41 +501,52 @@ app.post("/api/test/apply-transfer", async (req, res) => {
 
             return res.json({
                 message: `Applied transfer of ${transferAmt} ${item_name} from ${source_shop} to ${target_shop}.`,
+                appliedCount: 1,
                 source_new_weight: newSrcWeight,
                 target_new_weight: newTgtWeight
             });
         }
 
-        // Apply automatic rebalancing: compute current recommendations and apply all
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const rawData = await storage.getReadingsSince(twentyFourHoursAgo);
+        // CASE B: Execute ALL Active Recommended Transfers via Matchmaking Engine
+        const analytics = computeAnalyticsAndTransfers(rawData);
+        const { redistributions } = analytics;
 
-        // Group latest weights
-        const latestByPair = {};
-        for (const r of rawData) {
-            const key = `${normalizeShop(r.device_id)}|${normalizeCommodity(r.item_name)}`;
-            latestByPair[key] = Number(r.weight);
+        if (!redistributions || redistributions.length === 0) {
+            return res.json({
+                message: "No active transfers needed. All commodities are already at or above safe threshold levels.",
+                appliedCount: 0
+            });
         }
 
-        // Apply safe rebalancing to bring deficit items up to safe target levels
+        // Apply every active transfer recommendation
         const updates = [];
-        for (const shop of DEFAULT_SHOPS) {
-            for (const item of COMMODITIES) {
-                const key = `${shop}|${item}`;
-                const curr = latestByPair[key];
-                const config = COMMODITY_CONFIG[item];
-                const safeLevel = config.baseMin + config.targetBuffer;
+        const runningWeights = { ...analytics.latestWeights };
 
-                if (curr !== undefined && curr < config.baseMin) {
-                    // Brought up to safe target
-                    updates.push({
-                        device_id: shop,
-                        item_name: item,
-                        weight: safeLevel,
-                        created_at: now
-                    });
-                }
-            }
+        for (const rec of redistributions) {
+            const srcKey = `${rec.source_shop}|${rec.item}`;
+            const tgtKey = `${rec.target_shop}|${rec.item}`;
+
+            const currentSrc = runningWeights[srcKey] !== undefined ? runningWeights[srcKey] : 50;
+            const currentTgt = runningWeights[tgtKey] !== undefined ? runningWeights[tgtKey] : 0;
+
+            const newSrc = Math.max(0, Number((currentSrc - rec.amount).toFixed(1)));
+            const newTgt = Number((currentTgt + rec.amount).toFixed(1));
+
+            runningWeights[srcKey] = newSrc;
+            runningWeights[tgtKey] = newTgt;
+
+            updates.push({
+                device_id: rec.source_shop,
+                item_name: rec.item,
+                weight: newSrc,
+                created_at: now
+            });
+            updates.push({
+                device_id: rec.target_shop,
+                item_name: rec.item,
+                weight: newTgt,
+                created_at: now
+            });
         }
 
         if (updates.length > 0) {
@@ -539,8 +554,9 @@ app.post("/api/test/apply-transfer", async (req, res) => {
         }
 
         res.json({
-            message: `Redistribution transfers executed! Restored ${updates.length} deficit items to safe levels.`,
-            appliedUpdates: updates
+            message: `Successfully executed ${redistributions.length} redistribution transfers across the network! All deficits replenished.`,
+            appliedCount: redistributions.length,
+            transfers: redistributions
         });
     } catch (err) {
         console.error("Error applying transfers:", err);
@@ -554,7 +570,8 @@ app.post("/api/test/apply-transfer", async (req, res) => {
  */
 app.post("/api/test/adjust", async (req, res) => {
     try {
-        const { device_id, item_name, weight, total_weight, consumed_weight } = req.body;
+        const body = req.body || {};
+        const { device_id, item_name, weight, total_weight, consumed_weight } = body;
         if (!device_id || weight === undefined) {
             return res.status(400).json({ error: "device_id and weight required" });
         }

@@ -262,9 +262,13 @@ function showToast(msg, isError = false) {
 }
 
 document.getElementById("btnSeed").addEventListener("click", async () => {
-    showToast("⏳ Seeding 5 shops with 5 items (24h baseline)...");
+    showToast("⏳ Seeding 5 shops with 5 items (Healthy Baseline)...");
     try {
-        const res = await fetch("http://localhost:3000/api/test/seed", { method: "POST" });
+        const res = await fetch("http://localhost:3000/api/test/seed", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
         const data = await res.json();
         showToast(`✅ ${data.message}`);
         await loadData();
@@ -274,9 +278,13 @@ document.getElementById("btnSeed").addEventListener("click", async () => {
 });
 
 document.getElementById("btnShortage").addEventListener("click", async () => {
-    showToast("⏳ Injecting emergency shortage spikes...");
+    showToast("⏳ Injecting emergency shortage spikes across 5 commodities...");
     try {
-        const res = await fetch("http://localhost:3000/api/test/shortage", { method: "POST" });
+        const res = await fetch("http://localhost:3000/api/test/shortage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
         const data = await res.json();
         showToast(`🚨 ${data.message}`);
         await loadData();
@@ -288,7 +296,11 @@ document.getElementById("btnShortage").addEventListener("click", async () => {
 document.getElementById("btnApplyAll").addEventListener("click", async () => {
     showToast("⏳ Executing recommended redistribution transfers...");
     try {
-        const res = await fetch("http://localhost:3000/api/test/apply-transfer", { method: "POST" });
+        const res = await fetch("http://localhost:3000/api/test/apply-transfer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
         const data = await res.json();
         showToast(`🚚 ${data.message}`);
         await loadData();
@@ -301,7 +313,11 @@ document.getElementById("btnReset").addEventListener("click", async () => {
     if (!confirm("Are you sure you want to reset all inventory records?")) return;
     showToast("⏳ Resetting all stock data...");
     try {
-        const res = await fetch("http://localhost:3000/api/test/reset", { method: "POST" });
+        const res = await fetch("http://localhost:3000/api/test/reset", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
         const data = await res.json();
         showToast(`🔄 ${data.message}`);
         await loadData();
