@@ -8,10 +8,12 @@ An end-to-end IoT-driven inventory management and resource redistribution system
 
 ## 🚀 Key Features
 
-*   **IoT Edge Tracking**: Integrates ESP8266 and ESP32 nodes with simulated or actual physical weight inputs to monitor stocks.
-*   **Dynamic Shortage Risk Prediction**: Shifts away from fixed thresholds, instead calculating risk levels (`NORMAL`, `MEDIUM RISK`, `HIGH RISK`) based on 24-hour sliding averages of consumption rates.
-*   **Intelligent Resource Redistribution**: Employs a matchmaking algorithm to balance supply by transferring surplus stocks from stable centers directly to deficit centers.
-*   **Interactive Web Dashboard**: Modern dark-themed dashboard presenting live status tables, alert rosters, and automated redistribution recommendations.
+*   **Multi-Commodity Tracking (5 Items)**: Tracks independent inventory lines for **Rice 🍚, Sugar 🍬, Wheat 🌾, Toor Dal 🥣, and Palm Oil 🛢️** with custom threshold dynamics.
+*   **5 Monitored Distribution Shops**: Full network visibility across Shop 1 (Central Hub) through Shop 5 (West Center).
+*   **Dynamic Shortage Risk Prediction**: Evaluates 24-hour sliding averages of consumption rates per commodity to assign risk levels (`NORMAL`, `MEDIUM RISK`, `HIGH RISK`).
+*   **Item-Aware Intelligent Redistribution**: Recommends point-to-point transfers matching surplus commodities directly to deficit centers without mixing food types.
+*   **1-Click In-Dashboard Testing Suite**: Full interactive testing controls in the UI to seed baseline data, simulate emergency shortages, and execute transfers on the fly.
+*   **Resilient Dual Storage**: Cloud Supabase PostgreSQL with automated fallback to local JSON database (`backend/data/stock_data.json`).
 
 ---
 
@@ -60,14 +62,14 @@ graph TD
 smart-hunger-iot/
 ├── backend/
 │   ├── .env.example             # Template for API credentials
-│   ├── apply_redistribution.js  # Script to simulate redistribution execution
-│   ├── demo_seed.js             # Script to inject mock multi-step demo data
-│   ├── inject_live.js           # Script to simulate real-time weight drops
-│   ├── seed.js                  # Script to seed database with base profiles
-│   ├── server.js                # Express backend application gateway
-│   └── simulate_shortage_b.js   # Script to trigger a critical shortage alarm
+│   ├── apply_redistribution.js  # Script to apply item-aware transfers
+│   ├── seed_5shops.js           # Baseline generator for 5 shops x 5 items
+│   ├── server.js                # Express gateway & analytics engine
+│   ├── simulate_5shops_shortage.js # Injects emergency shortage spikes
+│   └── storage.js               # Resilient storage adapter (Supabase + Local JSON)
 ├── database/
-│   └── 01_add_stock_columns.sql # SQL migration query to update schema
+│   ├── 01_add_stock_columns.sql # Base schema migration
+│   └── 02_add_item_support.sql  # Multi-commodity column migration
 ├── devices/
 │   ├── esp32_food_sensor/
 │   │   ├── esp32_food_sensor.ino # Firmware for ESP32 nodes (Center B & C)
@@ -161,23 +163,29 @@ The dashboard is configured to poll `http://localhost:3000/api/data` every 5 sec
 
 ---
 
-## 🧪 Simulation and Seeding
+## 🧪 Simulation and Testing Suite
 
-To verify dashboard visuals and data algorithms without physical microcontrollers, use the built-in NPM simulation scripts:
+To verify dashboard visuals and item-aware redistribution algorithms without physical microcontrollers, you can use **either** the web interface or the terminal:
 
-*   **Seed Standard State**: Populates base history for Centers A, B, and C to establish normal and warning thresholds.
+### 1. In-Dashboard Testing (Recommended)
+Open the dashboard (`http://localhost:3000`) and use the **🧪 Simulation & Testing Control Center** at the top of the page:
+- **🌱 Seed 5 Shops Baseline**: Injects 24h realistic curves for all 5 shops and 5 commodities (25 streams).
+- **🚨 Simulate Emergency Shortages**: Triggers critical drops on Rice, Sugar, Wheat, Toor Dal, and Palm Oil.
+- **🚚 Execute All Transfers**: Automatically executes the point-to-point redistribution recommendations.
+- **⚡ Apply Single Transfer**: Execute any individual transfer directly on its recommendation card.
+- **✏️ Manual Stock Injection**: Input any custom weight for any shop and commodity.
+
+### 2. Command-Line Simulation Scripts
+*   **Seed 5 Shops x 5 Items Baseline**:
     ```bash
     npm run seed
+    # or: npm run seed-5shops
     ```
-*   **Seed Demo Walkthrough**: Posts sequential weight drops through the active local backend to show dynamic risk escalation.
-    ```bash
-    npm run demo
-    ```
-*   **Trigger Shortage Alert**: Drop Center B to critical levels (1.5 kg) to confirm `HIGH RISK` notifications.
+*   **Trigger Critical Shortages**:
     ```bash
     npm run simulate-shortage
     ```
-*   **Execute Redistribution Logisitics**: Simulates the physical transfer of food stock, updating database tallies to bring Center A back to a safe level.
+*   **Execute Item-Aware Redistribution Logistics**:
     ```bash
     npm run apply-redistribution
     ```

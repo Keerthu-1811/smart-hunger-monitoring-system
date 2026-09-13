@@ -3,34 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Hunger Monitoring</title>
+    <title>Smart Hunger IoT Monitoring - Multi-Commodity Distribution</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>Smart Hunger Monitoring Dashboard</h1>
+        <div class="header-container">
+            <div class="header-title-group">
+                <span class="header-badge">IoT Edge + AI Redistribution</span>
+                <h1>🥣 Smart Hunger Monitoring Dashboard</h1>
+                <p class="subtitle">Autonomous inventory monitoring & dynamic resource redistribution across 5 community distribution shops</p>
+            </div>
+            <div class="header-status">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="connectionStatus">Connecting to Gateway...</span>
+                </div>
+                <div class="storage-pill" id="storagePill">Storage: Checking...</div>
+            </div>
+        </div>
     </header>
 
     <main>
+        <!-- 1. Executive Metric Summary Cards -->
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">🏬</div>
+                <div class="metric-content">
+                    <span class="metric-label">Monitored Shops</span>
+                    <span class="metric-val" id="totalShopsVal">5</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">📦</div>
+                <div class="metric-content">
+                    <span class="metric-label">Commodity Streams</span>
+                    <span class="metric-val" id="totalItemsVal">25</span>
+                </div>
+            </div>
+            <div class="metric-card risk-card">
+                <div class="metric-icon">🚨</div>
+                <div class="metric-content">
+                    <span class="metric-label">Critical Shortages</span>
+                    <span class="metric-val" id="highRiskVal">0</span>
+                </div>
+            </div>
+            <div class="metric-card medium-risk-card">
+                <div class="metric-icon">⚡</div>
+                <div class="metric-content">
+                    <span class="metric-label">Rapid Depletions</span>
+                    <span class="metric-val" id="mediumRiskVal">0</span>
+                </div>
+            </div>
+            <div class="metric-card success-card">
+                <div class="metric-icon">🚚</div>
+                <div class="metric-content">
+                    <span class="metric-label">Redistribution Directives</span>
+                    <span class="metric-val" id="redistCountVal">0</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Interactive Testing & Simulation Suite -->
+        <section class="panel simulator-panel">
+            <div class="simulator-header">
+                <div>
+                    <h2>🧪 Simulation & Testing Control Center</h2>
+                    <p class="panel-desc">Test real-time IoT events, simulate emergency food shortages, and execute redistribution algorithms with 1 click.</p>
+                </div>
+                <button class="btn-toggle" id="toggleSimBtn">Hide Controls</button>
+            </div>
+            <div class="simulator-body" id="simulatorBody">
+                <div class="action-buttons-group">
+                    <button class="btn btn-primary" id="btnSeed">
+                        <span>🌱</span> Seed 5 Shops Baseline
+                    </button>
+                    <button class="btn btn-danger" id="btnShortage">
+                        <span>🚨</span> Simulate Emergency Shortages
+                    </button>
+                    <button class="btn btn-success" id="btnApplyAll">
+                        <span>🚚</span> Execute All Transfers
+                    </button>
+                    <button class="btn btn-secondary" id="btnReset">
+                        <span>🔄</span> Reset All Data
+                    </button>
+                </div>
+
+                <!-- Custom Injection Form -->
+                <div class="custom-inject-box">
+                    <span class="inject-title">✏️ Quick Manual Stock Injection:</span>
+                    <div class="inject-form">
+                        <select id="injectShopSelect">
+                            <option value="Shop 1 (Central Hub)">Shop 1 (Central Hub)</option>
+                            <option value="Shop 2 (North Market)">Shop 2 (North Market)</option>
+                            <option value="Shop 3 (South Depot)">Shop 3 (South Depot)</option>
+                            <option value="Shop 4 (East District)">Shop 4 (East District)</option>
+                            <option value="Shop 5 (West Center)">Shop 5 (West Center)</option>
+                        </select>
+                        <select id="injectItemSelect">
+                            <option value="Rice">Rice 🍚</option>
+                            <option value="Sugar">Sugar 🍬</option>
+                            <option value="Wheat">Wheat 🌾</option>
+                            <option value="Toor Dal">Toor Dal 🥣</option>
+                            <option value="Palm Oil">Palm Oil 🛢️</option>
+                        </select>
+                        <input type="number" id="injectWeightInput" placeholder="Weight (kg/L)" min="0" max="500" step="0.5" value="15">
+                        <button class="btn btn-inject" id="btnInject">Inject Sensor Reading</button>
+                    </div>
+                </div>
+
+                <div class="sim-toast" id="simToast">Ready for testing. Select an action above.</div>
+            </div>
+        </section>
+
+        <!-- 3. Dynamic Redistribution & Alerts Split Section -->
         <div class="top-panels">
-            <section class="panel alerts-panel">
-                <h2>⚠️ System Alerts</h2>
-                <ul id="alertsList"><li>Loading alerts...</li></ul>
-            </section>
-            
+            <!-- Redistribution Panel -->
             <section class="panel redist-panel">
-                <h2>🔄 Redistribution Recommendations</h2>
-                <ul id="redistList"><li>Loading recommendations...</li></ul>
+                <div class="panel-header-with-badge">
+                    <h2>🔄 Item-Aware Redistribution Recommendations</h2>
+                    <span class="badge-counter" id="redistCounterBadge">0 Active</span>
+                </div>
+                <p class="panel-desc">Autonomous matchmaking matches surplus shops with critical deficit shops for matching commodities.</p>
+                <div id="redistListContainer" class="redist-list">
+                    <div class="empty-state">Calculating redistribution directives...</div>
+                </div>
+            </section>
+
+            <!-- Alerts Panel -->
+            <section class="panel alerts-panel">
+                <div class="panel-header-with-badge">
+                    <h2>⚠️ Critical Alerts & Depletion Warnings</h2>
+                    <span class="badge-counter alert-counter" id="alertCounterBadge">0 Alerts</span>
+                </div>
+                <p class="panel-desc">Dynamic 24-hour sliding analytics flagging stockouts and anomalous consumption velocities.</p>
+                <div id="alertsListContainer" class="alerts-list">
+                    <div class="empty-state">No active alerts. Systems normal.</div>
+                </div>
             </section>
         </div>
 
+        <!-- 4. Multi-Commodity Stock Matrix -->
         <section class="panel stock-panel">
-            <h2>📊 Center Comparison</h2>
-            <div id="centersTableContainer" class="table-responsive">
-                <p>Loading comparison table...</p>
+            <div class="matrix-header">
+                <div>
+                    <h2>📊 5 Shops & 5 Commodities Stock Matrix</h2>
+                    <p class="panel-desc">Live weights, delivery totals, 24h average consumption rates, and dynamic safety status.</p>
+                </div>
+                <!-- Commodity Filter Tabs -->
+                <div class="filter-tabs" id="filterTabs">
+                    <button class="tab-btn active" data-item="ALL">All Items (25)</button>
+                    <button class="tab-btn" data-item="Rice">Rice 🍚</button>
+                    <button class="tab-btn" data-item="Sugar">Sugar 🍬</button>
+                    <button class="tab-btn" data-item="Wheat">Wheat 🌾</button>
+                    <button class="tab-btn" data-item="Toor Dal">Toor Dal 🥣</button>
+                    <button class="tab-btn" data-item="Palm Oil">Palm Oil 🛢️</button>
+                </div>
+            </div>
+
+            <div id="shopsContainer" class="shops-container">
+                <p class="empty-state">Loading stock matrix...</p>
             </div>
         </section>
     </main>
+
+    <footer>
+        <p>Smart Hunger IoT Monitoring & Autonomous Redistribution System • 5 Distribution Centers Network • Auto-refreshing every 5s</p>
+    </footer>
 
     <script src="dashboard.js"></script>
 </body>

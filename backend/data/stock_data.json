@@ -1,0 +1,902 @@
+[
+  {
+    "id": 1,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Rice",
+    "weight": 100,
+    "total_weight": 120,
+    "consumed_weight": 20,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 2,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Rice",
+    "weight": 95,
+    "total_weight": 120,
+    "consumed_weight": 25,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 3,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Rice",
+    "weight": 89,
+    "total_weight": 120,
+    "consumed_weight": 31,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 4,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Rice",
+    "weight": 85,
+    "total_weight": 120,
+    "consumed_weight": 35,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 5,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Sugar",
+    "weight": 45,
+    "total_weight": 50,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 6,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Sugar",
+    "weight": 40,
+    "total_weight": 50,
+    "consumed_weight": 10,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 7,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Sugar",
+    "weight": 34,
+    "total_weight": 50,
+    "consumed_weight": 16,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 8,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Sugar",
+    "weight": 30,
+    "total_weight": 50,
+    "consumed_weight": 20,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 9,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Wheat",
+    "weight": 60,
+    "total_weight": 70,
+    "consumed_weight": 10,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 10,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Wheat",
+    "weight": 55,
+    "total_weight": 70,
+    "consumed_weight": 15,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 11,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Wheat",
+    "weight": 49,
+    "total_weight": 70,
+    "consumed_weight": 21,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 12,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Wheat",
+    "weight": 45,
+    "total_weight": 70,
+    "consumed_weight": 25,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 13,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Toor Dal",
+    "weight": 60,
+    "total_weight": 60,
+    "consumed_weight": 0,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 14,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Toor Dal",
+    "weight": 55,
+    "total_weight": 60,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 15,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Toor Dal",
+    "weight": 49,
+    "total_weight": 60,
+    "consumed_weight": 11,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 16,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Toor Dal",
+    "weight": 45,
+    "total_weight": 60,
+    "consumed_weight": 15,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 17,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Palm Oil",
+    "weight": 40,
+    "total_weight": 40,
+    "consumed_weight": 0,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 18,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Palm Oil",
+    "weight": 35,
+    "total_weight": 40,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 19,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Palm Oil",
+    "weight": 29,
+    "total_weight": 40,
+    "consumed_weight": 11,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 20,
+    "device_id": "Shop 1 (Central Hub)",
+    "item_name": "Palm Oil",
+    "weight": 25,
+    "total_weight": 40,
+    "consumed_weight": 15,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 21,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Rice",
+    "weight": 95,
+    "total_weight": 100,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 22,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Rice",
+    "weight": 90,
+    "total_weight": 100,
+    "consumed_weight": 10,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 23,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Rice",
+    "weight": 84,
+    "total_weight": 100,
+    "consumed_weight": 16,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 24,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Rice",
+    "weight": 80,
+    "total_weight": 100,
+    "consumed_weight": 20,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 25,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Sugar",
+    "weight": 60,
+    "total_weight": 60,
+    "consumed_weight": 0,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 26,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Sugar",
+    "weight": 55,
+    "total_weight": 60,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 27,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Sugar",
+    "weight": 49,
+    "total_weight": 60,
+    "consumed_weight": 11,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 28,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Sugar",
+    "weight": 45,
+    "total_weight": 60,
+    "consumed_weight": 15,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 29,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Wheat",
+    "weight": 70,
+    "total_weight": 80,
+    "consumed_weight": 10,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 30,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Wheat",
+    "weight": 65,
+    "total_weight": 80,
+    "consumed_weight": 15,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 31,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Wheat",
+    "weight": 59,
+    "total_weight": 80,
+    "consumed_weight": 21,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 32,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Wheat",
+    "weight": 55,
+    "total_weight": 80,
+    "consumed_weight": 25,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 33,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Toor Dal",
+    "weight": 35,
+    "total_weight": 40,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 34,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Toor Dal",
+    "weight": 30,
+    "total_weight": 40,
+    "consumed_weight": 10,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 35,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Toor Dal",
+    "weight": 24,
+    "total_weight": 40,
+    "consumed_weight": 16,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 36,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Toor Dal",
+    "weight": 20,
+    "total_weight": 40,
+    "consumed_weight": 20,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 37,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Palm Oil",
+    "weight": 50,
+    "total_weight": 50,
+    "consumed_weight": 0,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 38,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Palm Oil",
+    "weight": 45,
+    "total_weight": 50,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 39,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Palm Oil",
+    "weight": 39,
+    "total_weight": 50,
+    "consumed_weight": 11,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 40,
+    "device_id": "Shop 2 (North Market)",
+    "item_name": "Palm Oil",
+    "weight": 35,
+    "total_weight": 50,
+    "consumed_weight": 15,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 41,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Rice",
+    "weight": 23,
+    "total_weight": 80,
+    "consumed_weight": 57,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 42,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Rice",
+    "weight": 18,
+    "total_weight": 80,
+    "consumed_weight": 62,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 43,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Rice",
+    "weight": 12,
+    "total_weight": 80,
+    "consumed_weight": 68,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 44,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Rice",
+    "weight": 8,
+    "total_weight": 80,
+    "consumed_weight": 72,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 45,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Sugar",
+    "weight": 33,
+    "total_weight": 40,
+    "consumed_weight": 7,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 46,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Sugar",
+    "weight": 28,
+    "total_weight": 40,
+    "consumed_weight": 12,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 47,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Sugar",
+    "weight": 22,
+    "total_weight": 40,
+    "consumed_weight": 18,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 48,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Sugar",
+    "weight": 18,
+    "total_weight": 40,
+    "consumed_weight": 22,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 49,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Wheat",
+    "weight": 35,
+    "total_weight": 60,
+    "consumed_weight": 25,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 50,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Wheat",
+    "weight": 30,
+    "total_weight": 60,
+    "consumed_weight": 30,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 51,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Wheat",
+    "weight": 24,
+    "total_weight": 60,
+    "consumed_weight": 36,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 52,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Wheat",
+    "weight": 20,
+    "total_weight": 60,
+    "consumed_weight": 40,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 53,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Toor Dal",
+    "weight": 19,
+    "total_weight": 35,
+    "consumed_weight": 16,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 54,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Toor Dal",
+    "weight": 14,
+    "total_weight": 35,
+    "consumed_weight": 21,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 55,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Toor Dal",
+    "weight": 8,
+    "total_weight": 35,
+    "consumed_weight": 27,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 56,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Toor Dal",
+    "weight": 4,
+    "total_weight": 35,
+    "consumed_weight": 31,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 57,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Palm Oil",
+    "weight": 27,
+    "total_weight": 30,
+    "consumed_weight": 3,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 58,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Palm Oil",
+    "weight": 22,
+    "total_weight": 30,
+    "consumed_weight": 8,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 59,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Palm Oil",
+    "weight": 16,
+    "total_weight": 30,
+    "consumed_weight": 14,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 60,
+    "device_id": "Shop 3 (South Depot)",
+    "item_name": "Palm Oil",
+    "weight": 12,
+    "total_weight": 30,
+    "consumed_weight": 18,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 61,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Rice",
+    "weight": 60,
+    "total_weight": 90,
+    "consumed_weight": 30,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 62,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Rice",
+    "weight": 55,
+    "total_weight": 90,
+    "consumed_weight": 35,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 63,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Rice",
+    "weight": 49,
+    "total_weight": 90,
+    "consumed_weight": 41,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 64,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Rice",
+    "weight": 45,
+    "total_weight": 90,
+    "consumed_weight": 45,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 65,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Sugar",
+    "weight": 19,
+    "total_weight": 35,
+    "consumed_weight": 16,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 66,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Sugar",
+    "weight": 14,
+    "total_weight": 35,
+    "consumed_weight": 21,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 67,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Sugar",
+    "weight": 8,
+    "total_weight": 35,
+    "consumed_weight": 27,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 68,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Sugar",
+    "weight": 4,
+    "total_weight": 35,
+    "consumed_weight": 31,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 69,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Wheat",
+    "weight": 33,
+    "total_weight": 50,
+    "consumed_weight": 17,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 70,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Wheat",
+    "weight": 28,
+    "total_weight": 50,
+    "consumed_weight": 22,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 71,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Wheat",
+    "weight": 22,
+    "total_weight": 50,
+    "consumed_weight": 28,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 72,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Wheat",
+    "weight": 18,
+    "total_weight": 50,
+    "consumed_weight": 32,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 73,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Toor Dal",
+    "weight": 33,
+    "total_weight": 40,
+    "consumed_weight": 7,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 74,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Toor Dal",
+    "weight": 28,
+    "total_weight": 40,
+    "consumed_weight": 12,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 75,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Toor Dal",
+    "weight": 22,
+    "total_weight": 40,
+    "consumed_weight": 18,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 76,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Toor Dal",
+    "weight": 18,
+    "total_weight": 40,
+    "consumed_weight": 22,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 77,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Palm Oil",
+    "weight": 35,
+    "total_weight": 40,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 78,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Palm Oil",
+    "weight": 30,
+    "total_weight": 40,
+    "consumed_weight": 10,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 79,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Palm Oil",
+    "weight": 24,
+    "total_weight": 40,
+    "consumed_weight": 16,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 80,
+    "device_id": "Shop 4 (East District)",
+    "item_name": "Palm Oil",
+    "weight": 20,
+    "total_weight": 40,
+    "consumed_weight": 20,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 81,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Rice",
+    "weight": 55,
+    "total_weight": 85,
+    "consumed_weight": 30,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 82,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Rice",
+    "weight": 50,
+    "total_weight": 85,
+    "consumed_weight": 35,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 83,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Rice",
+    "weight": 44,
+    "total_weight": 85,
+    "consumed_weight": 41,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 84,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Rice",
+    "weight": 40,
+    "total_weight": 85,
+    "consumed_weight": 45,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 85,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Sugar",
+    "weight": 40,
+    "total_weight": 45,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 86,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Sugar",
+    "weight": 35,
+    "total_weight": 45,
+    "consumed_weight": 10,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 87,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Sugar",
+    "weight": 29,
+    "total_weight": 45,
+    "consumed_weight": 16,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 88,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Sugar",
+    "weight": 25,
+    "total_weight": 45,
+    "consumed_weight": 20,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 89,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Wheat",
+    "weight": 21,
+    "total_weight": 70,
+    "consumed_weight": 49,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 90,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Wheat",
+    "weight": 16,
+    "total_weight": 70,
+    "consumed_weight": 54,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 91,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Wheat",
+    "weight": 10,
+    "total_weight": 70,
+    "consumed_weight": 60,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 92,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Wheat",
+    "weight": 6,
+    "total_weight": 70,
+    "consumed_weight": 64,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 93,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Toor Dal",
+    "weight": 30,
+    "total_weight": 35,
+    "consumed_weight": 5,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 94,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Toor Dal",
+    "weight": 25,
+    "total_weight": 35,
+    "consumed_weight": 10,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 95,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Toor Dal",
+    "weight": 19,
+    "total_weight": 35,
+    "consumed_weight": 16,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 96,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Toor Dal",
+    "weight": 15,
+    "total_weight": 35,
+    "consumed_weight": 20,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  },
+  {
+    "id": 97,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Palm Oil",
+    "weight": 18,
+    "total_weight": 35,
+    "consumed_weight": 17,
+    "created_at": "2026-09-13T05:05:47.574Z"
+  },
+  {
+    "id": 98,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Palm Oil",
+    "weight": 13,
+    "total_weight": 35,
+    "consumed_weight": 22,
+    "created_at": "2026-09-13T09:05:47.574Z"
+  },
+  {
+    "id": 99,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Palm Oil",
+    "weight": 7,
+    "total_weight": 35,
+    "consumed_weight": 28,
+    "created_at": "2026-09-13T14:05:47.574Z"
+  },
+  {
+    "id": 100,
+    "device_id": "Shop 5 (West Center)",
+    "item_name": "Palm Oil",
+    "weight": 3,
+    "total_weight": 35,
+    "consumed_weight": 32,
+    "created_at": "2026-09-13T17:05:47.574Z"
+  }
+]

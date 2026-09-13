@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node backend/server.js",
-    "seed": "node backend/seed.js",
-    "demo": "node backend/demo_seed.js",
-    "simulate-shortage": "node backend/simulate_shortage_b.js",
+    "seed": "node backend/seed_5shops.js",
+    "seed-5shops": "node backend/seed_5shops.js",
+    "simulate-shortage": "node backend/simulate_5shops_shortage.js",
     "apply-redistribution": "node backend/apply_redistribution.js",
-    "inject-live": "node backend/inject_live.js",
+    "demo": "node backend/seed_5shops.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

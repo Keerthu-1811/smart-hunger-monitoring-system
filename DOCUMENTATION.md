@@ -12,7 +12,8 @@ This project monitors food stock levels for multiple distribution centers using 
 
 ## Payload Contract (`/api/fooddata`)
 Expected JSON fields:
-- `device_id` (string, required)
+- `device_id` (string, required, e.g. "Shop 1 (Central Hub)")
+- `item_name` (string, optional, defaults to "Rice" - options: Rice, Sugar, Wheat, Toor Dal, Palm Oil)
 - `weight` (number, required)
 - `total_weight` (number, optional, defaults to 0 in backend)
 - `consumed_weight` (number, optional, defaults to 0 in backend)
