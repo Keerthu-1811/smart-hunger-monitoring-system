@@ -101,7 +101,7 @@
 
                 <div class="beneficiary-lookup-bar">
                     <input type="text" id="cardLookupInput" placeholder="Enter Ration Card No. (e.g., TN-PDS-1001)..." value="TN-PDS-1001">
-                    <button class="btn btn-primary" id="btnLookupCard">🔍 Fetch Entitlement</button>
+                    <button class="btn btn-primary" id="btnLookupCard">Fetch Entitlement</button>
                 </div>
 
                 <!-- Single Beneficiary Card Display -->
@@ -124,11 +124,11 @@
 
                 <!-- Quick 1-Click Scenario Preset Buttons -->
                 <div class="test-scenarios-strip">
-                    <span class="strip-label">⚡ 1-Click Verification & Fraud Presets:</span>
+                    <span class="strip-label">1-Click Verification & Fraud Presets:</span>
                     <button class="preset-btn valid" onclick="loadTestPreset('VALID')">🟢 Valid Dispense (All Match)</button>
-                    <button class="preset-btn fraud" onclick="loadTestPreset('VISION_MISMATCH')">🚨 Vision Mismatch (Commodity Fraud)</button>
-                    <button class="preset-btn fraud" onclick="loadTestPreset('QUOTA_EXCEEDED')">🚨 Quota Over-dispense (Exceeds Limit)</button>
-                    <button class="preset-btn fraud" onclick="loadTestPreset('ZERO_WEIGHT')">🚨 Scale Error (Zero / Tared)</button>
+                    <button class="preset-btn fraud" onclick="loadTestPreset('VISION_MISMATCH')">Vision Mismatch (Commodity Fraud)</button>
+                    <button class="preset-btn fraud" onclick="loadTestPreset('QUOTA_EXCEEDED')">Quota Over-dispense (Exceeds Limit)</button>
+                    <button class="preset-btn fraud" onclick="loadTestPreset('ZERO_WEIGHT')">Scale Error (Zero / Tared)</button>
                 </div>
 
                 <!-- 3 Hardware/Software Columns -->
@@ -209,17 +209,17 @@
                         <div class="form-group">
                             <label for="m3VisionSelect">Commodity Detected by Camera:</label>
                             <select id="m3VisionSelect" class="form-select">
-                                <option value="Rice">Rice 🍚 (Identified Grain)</option>
-                                <option value="Sugar">Sugar 🍬 (Refined Crystal)</option>
-                                <option value="Wheat">Wheat 🌾 (Whole Grain)</option>
-                                <option value="Toor Dal">Toor Dal 🥣 (Split Pigeon Pea)</option>
-                                <option value="Palm Oil">Palm Oil 🛢️ (Edible Oil Canister)</option>
+                                <option value="Rice">Rice (Identified Grain)</option>
+                                <option value="Sugar">Sugar (Refined Crystal)</option>
+                                <option value="Wheat">Wheat (Whole Grain)</option>
+                                <option value="Toor Dal">Toor Dal (Split Pigeon Pea)</option>
+                                <option value="Palm Oil">Palm Oil (Edible Oil Canister)</option>
                                 <option value="Foreign Item">⚠️ Foreign Item / Adulteration</option>
                             </select>
                         </div>
 
                         <div style="margin-top: 0.25rem;">
-                            <button type="button" class="btn-sync-vision" style="width: 100%;" onclick="syncVisionWithClaim()">🔄 Match Claimed Commodity</button>
+                            <button type="button" class="btn-sync-vision" style="width: 100%;" onclick="syncVisionWithClaim()">Match Claimed Commodity</button>
                         </div>
 
                         <div class="station-status-pill">
@@ -231,7 +231,7 @@
                 <!-- Verification Action & Verdict Banner -->
                 <div class="verification-action-bar">
                     <button class="btn btn-primary btn-large" id="btnRunVerification" onclick="runThreeWayVerification()">
-                        🔍 Run 3-Way Verification Check
+                        Run 3-Way Verification Check
                     </button>
                     <button class="btn btn-success btn-large" id="btnCommitDispense" onclick="executePdsDispense()">
                         ✅ Approve & Dispense Commodity
@@ -251,7 +251,7 @@
                         <h2>📋 Local Dispense Receipts (<span id="opReceiptsShopLabel">Shop 1</span>)</h2>
                         <p class="panel-desc">Chronological register of transactions executed at this counter terminal.</p>
                     </div>
-                    <button class="btn btn-secondary btn-sm" onclick="renderShopOperatorView()">🔄 Refresh Receipts</button>
+                    <button class="btn btn-secondary btn-sm" onclick="renderShopOperatorView()">Refresh Receipts</button>
                 </div>
                 <div id="operatorReceiptsTableContainer" class="audit-table-wrap">
                     <p class="empty-state">Loading receipts for this shop...</p>
@@ -314,22 +314,22 @@
                 <div class="simulator-body" id="simulatorBody">
                     <div class="action-buttons-group">
                         <button class="btn btn-primary" id="btnSeed">
-                            <span>🌱</span> Seed 5 Shops Baseline
+                            Seed 5 Shops Baseline
                         </button>
                         <button class="btn btn-danger" id="btnShortage">
-                            <span>🚨</span> Simulate Emergency Shortages
+                            Simulate Emergency Shortages
                         </button>
                         <button class="btn btn-success" id="btnApplyAll">
-                            <span>🚚</span> Execute All Transfers
+                            Execute All Transfers
                         </button>
                         <button class="btn btn-secondary" id="btnReset">
-                            <span>🔄</span> Reset All Data
+                            Reset All Data
                         </button>
                     </div>
 
                     <!-- Custom Injection Form -->
                     <div class="custom-inject-box">
-                        <span class="inject-title">✏️ Quick Manual Stock Injection:</span>
+                        <span class="inject-title">Quick Manual Stock Injection:</span>
                         <div class="inject-form">
                             <select id="injectShopSelect">
                                 <option value="Shop 1 (Central Hub)">Shop 1 (Central Hub)</option>
@@ -339,11 +339,11 @@
                                 <option value="Shop 5 (West Center)">Shop 5 (West Center)</option>
                             </select>
                             <select id="injectItemSelect">
-                                <option value="Rice">Rice 🍚</option>
-                                <option value="Sugar">Sugar 🍬</option>
-                                <option value="Wheat">Wheat 🌾</option>
-                                <option value="Toor Dal">Toor Dal 🥣</option>
-                                <option value="Palm Oil">Palm Oil 🛢️</option>
+                                <option value="Rice">Rice</option>
+                                <option value="Sugar">Sugar</option>
+                                <option value="Wheat">Wheat</option>
+                                <option value="Toor Dal">Toor Dal</option>
+                                <option value="Palm Oil">Palm Oil</option>
                             </select>
                             <input type="number" id="injectWeightInput" placeholder="Weight (kg/L)" min="0" max="500" step="0.5" value="15">
                             <button class="btn btn-inject" id="btnInject">Inject Sensor Reading</button>
@@ -411,10 +411,10 @@
                         <h2>👥 Master Beneficiary Registry (All 12 Households Across 5 Shops)</h2>
                         <p class="panel-desc">Central PDS database management with live entitlement tracking and quota allocations.</p>
                     </div>
-                    <button class="btn-toggle" id="btnToggleRegistry">Toggle Registry View</button>
+                    <button class="btn-toggle" id="btnToggleRegistry">Show Full 5-Shop Beneficiary Registry (12 Households)</button>
                 </div>
-                <div id="registryTableContainer" class="registry-table-wrap">
-                    <p class="empty-state">Loading master registry...</p>
+                <div id="registryTableContainer" class="registry-table-wrap" style="display:none;">
+                    <p class="empty-state">Click "Toggle Registry View" to load the beneficiary registry.</p>
                 </div>
             </section>
         </div>
@@ -464,12 +464,12 @@
                 <!-- Tamper Demonstration & Maintenance Controls -->
                 <div class="audit-controls-strip">
                     <div class="btn-group-left">
-                        <button class="btn btn-secondary btn-sm" onclick="loadAuditTransactions()">🔄 Refresh Audit Log</button>
-                        <button class="btn btn-warning btn-sm" onclick="triggerTamperDemo()" title="Simulate unauthorized modification to demonstrate chain break">⚠️ Demo: Simulate Ledger Tampering</button>
+                        <button class="btn btn-secondary btn-sm" onclick="loadAuditTransactions()">Refresh Audit Log</button>
+                        <button class="btn btn-warning btn-sm" onclick="triggerTamperDemo()" title="Simulate unauthorized modification to demonstrate chain break">Demo: Simulate Ledger Tampering</button>
                         <button class="btn btn-success btn-sm" onclick="triggerRepairDemo()" title="Restore valid chain state">🛡️ Repair / Restore Chain</button>
                     </div>
                     <div>
-                        <button class="btn btn-danger btn-sm" onclick="clearAuditLog()">🗑️ Clear Log</button>
+                        <button class="btn btn-danger btn-sm" onclick="clearAuditLog()">Clear Log</button>
                     </div>
                 </div>
 

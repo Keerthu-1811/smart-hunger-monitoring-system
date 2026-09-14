@@ -153,7 +153,7 @@ window.renderShopOperatorView = async function() {
 
     // 1. Render Local Stock Grid for activeOperatorShop
     if (currentData && currentData.shops) {
-        const shopData = currentData.shops.find(s => s.shop_name === activeOperatorShop);
+        const shopData = currentData.shops.find(s => s.shop_id === activeOperatorShop);
         if (shopData && shopData.items) {
             grid.innerHTML = shopData.items.map(item => {
                 const icon = COMMODITY_ICONS[item.item_name] || "📦";
@@ -517,7 +517,7 @@ function showToast(msg, isError = false) {
 }
 
 document.getElementById("btnSeed").addEventListener("click", async () => {
-    showToast("⏳ Seeding 5 shops with 5 items (Healthy Baseline)...");
+    showToast("Seeding 5 shops with 5 items (Healthy Baseline)...");
     try {
         const res = await fetch("http://localhost:3000/api/test/seed", {
             method: "POST",
@@ -525,15 +525,15 @@ document.getElementById("btnSeed").addEventListener("click", async () => {
             body: JSON.stringify({})
         });
         const data = await res.json();
-        showToast(`✅ ${data.message}`);
+        showToast(`${data.message}`);
         await loadData();
     } catch (e) {
-        showToast(`❌ Error: ${e.message}`, true);
+        showToast(`Error: ${e.message}`, true);
     }
 });
 
 document.getElementById("btnShortage").addEventListener("click", async () => {
-    showToast("⏳ Injecting emergency shortage spikes across 5 commodities...");
+    showToast("Injecting emergency shortage spikes across 5 commodities...");
     try {
         const res = await fetch("http://localhost:3000/api/test/shortage", {
             method: "POST",
@@ -541,15 +541,15 @@ document.getElementById("btnShortage").addEventListener("click", async () => {
             body: JSON.stringify({})
         });
         const data = await res.json();
-        showToast(`🚨 ${data.message}`);
+        showToast(`${data.message}`);
         await loadData();
     } catch (e) {
-        showToast(`❌ Error: ${e.message}`, true);
+        showToast(`Error: ${e.message}`, true);
     }
 });
 
 document.getElementById("btnApplyAll").addEventListener("click", async () => {
-    showToast("⏳ Executing recommended redistribution transfers...");
+    showToast("Executing recommended redistribution transfers...");
     try {
         const res = await fetch("http://localhost:3000/api/test/apply-transfer", {
             method: "POST",
@@ -557,16 +557,16 @@ document.getElementById("btnApplyAll").addEventListener("click", async () => {
             body: JSON.stringify({})
         });
         const data = await res.json();
-        showToast(`🚚 ${data.message}`);
+        showToast(`${data.message}`);
         await loadData();
     } catch (e) {
-        showToast(`❌ Error: ${e.message}`, true);
+        showToast(`Error: ${e.message}`, true);
     }
 });
 
 document.getElementById("btnReset").addEventListener("click", async () => {
     if (!confirm("Are you sure you want to reset all inventory records?")) return;
-    showToast("⏳ Resetting all stock data...");
+    showToast("Resetting all stock data...");
     try {
         const res = await fetch("http://localhost:3000/api/test/reset", {
             method: "POST",
@@ -574,16 +574,16 @@ document.getElementById("btnReset").addEventListener("click", async () => {
             body: JSON.stringify({})
         });
         const data = await res.json();
-        showToast(`🔄 ${data.message}`);
+        showToast(`${data.message}`);
         await loadData();
     } catch (e) {
-        showToast(`❌ Error: ${e.message}`, true);
+        showToast(`Error: ${e.message}`, true);
     }
 });
 
 // Single Transfer Execution
 window.applySingleTransfer = async function(source_shop, target_shop, item_name, amount) {
-    showToast(`⏳ Transferring ${amount} of ${item_name} from ${source_shop} to ${target_shop}...`);
+    showToast(`Transferring ${amount} of ${item_name} from ${source_shop} to ${target_shop}...`);
     try {
         const res = await fetch("http://localhost:3000/api/test/apply-transfer", {
             method: "POST",
@@ -591,10 +591,10 @@ window.applySingleTransfer = async function(source_shop, target_shop, item_name,
             body: JSON.stringify({ source_shop, target_shop, item_name, amount })
         });
         const data = await res.json();
-        showToast(`✅ ${data.message}`);
+        showToast(`${data.message}`);
         await loadData();
     } catch (e) {
-        showToast(`❌ Transfer failed: ${e.message}`, true);
+        showToast(`Transfer failed: ${e.message}`, true);
     }
 };
 
@@ -609,7 +609,7 @@ document.getElementById("btnInject").addEventListener("click", async () => {
         return;
     }
 
-    showToast(`⏳ Injecting ${weight} kg/L for ${item} at ${shop}...`);
+    showToast(`Injecting ${weight} kg/L for ${item} at ${shop}...`);
     try {
         const res = await fetch("http://localhost:3000/api/test/adjust", {
             method: "POST",
@@ -617,10 +617,10 @@ document.getElementById("btnInject").addEventListener("click", async () => {
             body: JSON.stringify({ device_id: shop, item_name: item, weight: weight })
         });
         const data = await res.json();
-        showToast(`✅ Stock updated: ${shop} -> ${item} = ${weight}`);
+        showToast(`Stock updated: ${shop} -> ${item} = ${weight}`);
         await loadData();
     } catch (e) {
-        showToast(`❌ Error: ${e.message}`, true);
+        showToast(`Error: ${e.message}`, true);
     }
 });
 
@@ -646,13 +646,13 @@ window.lookupBeneficiary = async function(cardNo) {
     const targetCard = (input.value || "TN-PDS-1001").trim();
 
     const container = document.getElementById("beneficiaryCardContainer");
-    container.innerHTML = `<p class="empty-state">⏳ Fetching entitlement records for ${targetCard}...</p>`;
+    container.innerHTML = `<p class="empty-state">Fetching entitlement records for ${targetCard}...</p>`;
 
     try {
         const res = await fetch(`http://localhost:3000/api/beneficiaries/${encodeURIComponent(targetCard)}`);
         if (!res.ok) {
             const errData = await res.json();
-            container.innerHTML = `<div class="empty-state" style="color: #f43f5e;">❌ ${errData.error || 'Beneficiary record not found.'}</div>`;
+            container.innerHTML = `<div class="empty-state" style="color: #f43f5e;">${errData.error || 'Beneficiary record not found.'}</div>`;
             return;
         }
 
@@ -691,12 +691,12 @@ window.lookupBeneficiary = async function(cardNo) {
                     <div>
                         <h3 class="ben-head-name">${b.family_head_name}</h3>
                         <div class="ben-card-meta">
-                            <span>💳 Ration Card: <strong style="color: #fff;">${b.ration_card_no}</strong></span>
-                            <span>🔒 Aadhaar: •••• ${b.aadhaar_last4}</span>
-                            <span>👨‍👩‍👧‍👦 Family: ${b.family_members_count} Members</span>
+                            <span>Ration Card: <strong style="color: #fff;">${b.ration_card_no}</strong></span>
+                            <span>Aadhaar: •••• ${b.aadhaar_last4}</span>
+                            <span>Family: ${b.family_members_count} Members</span>
                         </div>
                         <div style="margin-top: 0.35rem; font-size: 0.82rem; color: #38bdf8;">
-                            🏬 Registered Center: <strong>${b.assigned_shop_id}</strong>
+                            Registered Center: <strong>${b.assigned_shop_id}</strong>
                         </div>
                     </div>
                     <div>
@@ -706,7 +706,7 @@ window.lookupBeneficiary = async function(cardNo) {
 
                 <div>
                     <h4 style="margin: 0 0 0.85rem; font-size: 0.9rem; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.04em;">
-                        📋 Monthly Commodity Quotas & Current Balance
+                        Monthly Commodity Quotas & Current Balance
                     </h4>
                     <div class="quota-grid">
                         ${quotaHtml}
@@ -717,9 +717,9 @@ window.lookupBeneficiary = async function(cardNo) {
                 <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
                     <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Customer Quota Actions:</span>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn-chip" onclick="refillCustomerQuota('${b.ration_card_no}', 'Rice', 5)">➕ Add 5kg Rice Quota</button>
-                        <button class="btn-chip" onclick="refillCustomerQuota('${b.ration_card_no}', 'Sugar', 2)">➕ Add 2kg Sugar Quota</button>
-                        <button class="btn-chip" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4);" onclick="resetCustomerQuota('${b.ration_card_no}')">🔄 Reset Monthly Lifted</button>
+                        <button class="btn-chip" onclick="refillCustomerQuota('${b.ration_card_no}', 'Rice', 5)">Add 5kg Rice Quota</button>
+                        <button class="btn-chip" onclick="refillCustomerQuota('${b.ration_card_no}', 'Sugar', 2)">Add 2kg Sugar Quota</button>
+                        <button class="btn-chip" style="color: #34d399; border-color: rgba(16, 185, 129, 0.4);" onclick="resetCustomerQuota('${b.ration_card_no}')">Reset Monthly Lifted</button>
                     </div>
                 </div>
             </div>
@@ -730,7 +730,7 @@ window.lookupBeneficiary = async function(cardNo) {
 };
 
 window.refillCustomerQuota = async function(cardNo, item, amount) {
-    showToast(`⏳ Adding ${amount} kg to ${item} quota for ${cardNo}...`);
+    showToast(`Adding ${amount} kg to ${item} quota for ${cardNo}...`);
     try {
         const res = await fetch("http://localhost:3000/api/beneficiaries/add-quota", {
             method: "POST",
@@ -738,7 +738,7 @@ window.refillCustomerQuota = async function(cardNo, item, amount) {
             body: JSON.stringify({ card_no: cardNo, item, amount })
         });
         const data = await res.json();
-        showToast(`✅ ${data.message}`);
+        showToast(`${data.message}`);
 
         // Update all customer parts
         await window.lookupBeneficiary(cardNo);
@@ -748,12 +748,12 @@ window.refillCustomerQuota = async function(cardNo, item, amount) {
             await loadBeneficiariesRegistry();
         }
     } catch (e) {
-        showToast(`❌ Failed to add quota: ${e.message}`, true);
+        showToast(`Failed to add quota: ${e.message}`, true);
     }
 };
 
 window.resetCustomerQuota = async function(cardNo) {
-    showToast(`⏳ Resetting lifted amounts for ${cardNo}...`);
+    showToast(`Resetting lifted amounts for ${cardNo}...`);
     try {
         const res = await fetch("http://localhost:3000/api/beneficiaries/reset-customer", {
             method: "POST",
@@ -761,7 +761,7 @@ window.resetCustomerQuota = async function(cardNo) {
             body: JSON.stringify({ card_no: cardNo })
         });
         const data = await res.json();
-        showToast(`✅ ${data.message}`);
+        showToast(`${data.message}`);
 
         // Update all customer parts
         await window.lookupBeneficiary(cardNo);
@@ -771,7 +771,7 @@ window.resetCustomerQuota = async function(cardNo) {
             await loadBeneficiariesRegistry();
         }
     } catch (e) {
-        showToast(`❌ Failed to reset quota: ${e.message}`, true);
+        showToast(`Failed to reset quota: ${e.message}`, true);
     }
 };
 
@@ -976,7 +976,7 @@ window.runThreeWayVerification = async function() {
     const payload = getStationPayload();
     const verdictBox = document.getElementById("verificationVerdictContainer");
     verdictBox.style.display = "block";
-    verdictBox.innerHTML = `<p class="empty-state">⏳ Running 3-way cross-verification checks...</p>`;
+    verdictBox.innerHTML = `<p class="empty-state">Running 3-way cross-verification checks...</p>`;
 
     try {
         const res = await fetch("http://localhost:3000/api/verify", {
@@ -996,7 +996,7 @@ window.executePdsDispense = async function() {
     const payload = getStationPayload();
     const verdictBox = document.getElementById("verificationVerdictContainer");
     verdictBox.style.display = "block";
-    verdictBox.innerHTML = `<p class="empty-state">⏳ Processing transaction through cryptographic pipeline...</p>`;
+    verdictBox.innerHTML = `<p class="empty-state">Processing transaction through cryptographic pipeline...</p>`;
 
     try {
         const res = await fetch("http://localhost:3000/api/dispense", {
@@ -1075,7 +1075,7 @@ function renderVerdict(v, txResult = null) {
     if (v.violations && v.violations.length > 0) {
         violationsHtml = `
             <div class="violation-box">
-                <strong>🚨 Identified Rule Violations:</strong>
+                <strong>Identified Rule Violations:</strong>
                 ${v.violations.map(vi => `<div>• <strong>[${vi.rule}]</strong>: ${vi.message}</div>`).join('')}
             </div>
         `;
@@ -1084,8 +1084,8 @@ function renderVerdict(v, txResult = null) {
     let txStatusMsg = "";
     if (txResult) {
         txStatusMsg = isApproved
-            ? `<div style="margin-top: 0.75rem; font-weight: 700; color: #10b981;">🎉 ${txResult.message} (Logged in SHA-256 Ledger: ${txResult.transaction?.id})</div>`
-            : `<div style="margin-top: 0.75rem; font-weight: 700; color: #fb7185;">⚠️ ${txResult.message} (Security Alert logged: ${txResult.transaction?.id})</div>`;
+            ? `<div style="margin-top: 0.75rem; font-weight: 700; color: #10b981;">${txResult.message} (Logged in SHA-256 Ledger: ${txResult.transaction?.id})</div>`
+            : `<div style="margin-top: 0.75rem; font-weight: 700; color: #fb7185;">${txResult.message} (Security Alert logged: ${txResult.transaction?.id})</div>`;
     }
 
     verdictBox.innerHTML = `
@@ -1208,23 +1208,23 @@ window.loadAuditTransactions = async function() {
             let invBadgeText = invStatus.replace(/_/g, ' ');
             if (invStatus === "TAMPER_DETECTED") {
                 invBadgeClass = "tampered";
-                invBadgeText = "🚨 TAMPER DETECTED";
+                invBadgeText = "TAMPER DETECTED";
             } else if (invStatus === "PENDING_REVIEW") {
                 invBadgeClass = "pending";
-                invBadgeText = "⏳ PENDING REVIEW";
+                invBadgeText = "PENDING REVIEW";
             } else if (invStatus.startsWith("RESOLVED")) {
                 invBadgeClass = "resolved";
-                invBadgeText = invStatus === "RESOLVED_PENALIZED" ? "⚖️ PENALIZED" : "✅ RESOLVED (LEGIT)";
+                invBadgeText = invStatus === "RESOLVED_PENALIZED" ? "PENALIZED" : "RESOLVED (LEGIT)";
             } else if (invStatus === "UNDER_INVESTIGATION") {
                 invBadgeClass = "investigating";
-                invBadgeText = "🔍 INVESTIGATING";
+                invBadgeText = "INVESTIGATING";
             } else if (invStatus === "VERIFIED_NORMAL") {
                 invBadgeClass = "normal";
-                invBadgeText = "✔️ VERIFIED NORMAL";
+                invBadgeText = "VERIFIED NORMAL";
             }
 
             const violationsChip = tx.violations && tx.violations.length > 0
-                ? `<div style="font-size: 0.68rem; color: #fb7185; margin-top: 0.2rem;">⚠️ ${tx.violations.map(v => v.rule).join(", ")}</div>`
+                ? `<div style="font-size: 0.68rem; color: #fb7185; margin-top: 0.2rem;">${tx.violations.map(v => v.rule).join(", ")}</div>`
                 : "";
 
             const rowHighlight = isTampered ? 'style="background: rgba(239, 68, 68, 0.12);"' : '';
@@ -1258,7 +1258,7 @@ window.loadAuditTransactions = async function() {
                         <span style="font-size: 0.65rem; color: #64748b;">Prev: ${tx.prev_hash.substring(0, 10)}...</span>
                     </td>
                     <td>
-                        <button class="btn-inspect" onclick="event.stopPropagation(); openTxModal('${tx.id}')">🔍 Inspect</button>
+                        <button class="btn-inspect" onclick="event.stopPropagation(); openTxModal('${tx.id}')">Inspect</button>
                     </td>
                 </tr>
             `;
@@ -1292,30 +1292,30 @@ window.loadAuditTransactions = async function() {
 
 // --- M6 Tamper Simulation & Repair Demo ---
 window.triggerTamperDemo = async function() {
-    showToast("⚠️ Injecting unauthorized data tampering into historical block...");
+    showToast("Injecting unauthorized data tampering into historical block...");
     try {
         const res = await fetch("http://localhost:3000/api/transactions/tamper-demo", { method: "POST" });
         const data = await res.json();
         if (data.success) {
-            showToast(`🚨 Tamper simulated on Block #${data.tampered_index} (TX: ${data.tampered_tx_id})!`, true);
+            showToast(`Tamper simulated on Block #${data.tampered_index} (TX: ${data.tampered_tx_id})!`, true);
         } else {
-            showToast(`⚠️ ${data.message || 'No records available to tamper'}`);
+            showToast(`${data.message || 'No records available to tamper'}`);
         }
         await loadAuditTransactions();
     } catch (e) {
-        showToast(`❌ Tamper demo failed: ${e.message}`, true);
+        showToast(`Tamper demo failed: ${e.message}`, true);
     }
 };
 
 window.triggerRepairDemo = async function() {
-    showToast("⏳ Restoring ledger from verified pre-tamper snapshot...");
+    showToast("Restoring ledger from verified pre-tamper snapshot...");
     try {
         const res = await fetch("http://localhost:3000/api/transactions/repair-demo", { method: "POST" });
         const data = await res.json();
-        showToast(`🛡️ ${data.message}`);
+        showToast(`${data.message}`);
         await loadAuditTransactions();
     } catch (e) {
-        showToast(`❌ Repair failed: ${e.message}`, true);
+        showToast(`Repair failed: ${e.message}`, true);
     }
 };
 
@@ -1331,7 +1331,7 @@ window.openTxModal = async function(txId) {
     modal.style.display = "flex";
     modalTitle.innerText = `Loading ${txId}...`;
     modalTime.innerText = "";
-    modalBody.innerHTML = `<p class="empty-state">⏳ Fetching cryptographic proof and officer records...</p>`;
+    modalBody.innerHTML = `<p class="empty-state">Fetching cryptographic proof and officer records...</p>`;
 
     try {
         const res = await fetch(`http://localhost:3000/api/transactions/${encodeURIComponent(txId)}`);
@@ -1368,7 +1368,7 @@ window.openTxModal = async function(txId) {
         if (tx.violations && tx.violations.length > 0) {
             violationsHtml = `
                 <div>
-                    <span class="modal-section-title">🚨 Identified Rule Violations</span>
+                    <span class="modal-section-title">Identified Rule Violations</span>
                     <div class="violation-box" style="margin-top: 0.35rem;">
                         ${tx.violations.map(v => `<div>• <strong>[${v.rule}]</strong>: ${v.message}</div>`).join('')}
                     </div>
@@ -1396,7 +1396,7 @@ window.openTxModal = async function(txId) {
 
             <!-- 1. Metadata Grid -->
             <div>
-                <span class="modal-section-title">📦 Transaction & Dispense Metadata</span>
+                <span class="modal-section-title">Transaction & Dispense Metadata</span>
                 <div class="tx-meta-grid">
                     <div class="tx-meta-item">
                         <span class="lbl">Beneficiary Card</span>
@@ -1431,7 +1431,7 @@ window.openTxModal = async function(txId) {
 
             <!-- 2. Cryptographic Proof Breakdown -->
             <div>
-                <span class="modal-section-title">🔐 Cryptographic Ledger Proof (SHA-256 Chained)</span>
+                <span class="modal-section-title">Cryptographic Ledger Proof (SHA-256 Chained)</span>
                 <div class="crypto-proof-box">
                     <div class="signature-verdict-banner ${isValidSignature ? 'valid' : 'tampered'}">
                         <span>${isValidSignature ? '✅ CRYPTOGRAPHIC SIGNATURE MATCH - UNBROKEN INTEGRITY' : '🚨 SIGNATURE MISMATCH - DATA TAMPERING DETECTED!'}</span>
@@ -1462,7 +1462,7 @@ window.openTxModal = async function(txId) {
 
             <!-- 3. Inspecting Officer Investigation Case Management -->
             <div>
-                <span class="modal-section-title">📋 Inspecting Officer Audit Notes & Case Resolution</span>
+                <span class="modal-section-title">Inspecting Officer Audit Notes & Case Resolution</span>
                 <div class="officer-form-group">
                     <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                         <label style="font-size: 0.78rem; font-weight: 700; color: #94a3b8;">Case Resolution Status:</label>
@@ -1481,7 +1481,7 @@ window.openTxModal = async function(txId) {
 
                     <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
                         <button class="btn btn-secondary btn-sm" onclick="closeTxModal()">Close</button>
-                        <button class="btn btn-primary btn-sm" onclick="saveInvestigationNotes('${tx.id}')">💾 Save Investigation Notes</button>
+                        <button class="btn btn-primary btn-sm" onclick="saveInvestigationNotes('${tx.id}')">Save Investigation Notes</button>
                     </div>
                 </div>
             </div>
@@ -1513,7 +1513,7 @@ window.saveInvestigationNotes = async function(txId) {
         closeTxModal();
 
         // 2. Alert success toast
-        showToast("✅ " + data.message);
+        showToast("" + data.message);
 
         // 3. Immediately refresh table so updated verdict and audit status are displayed
         await loadAuditTransactions();
@@ -1534,7 +1534,7 @@ window.clearAuditLog = async function() {
     try {
         await fetch("http://localhost:3000/api/transactions/clear", { method: "POST" });
         await loadAuditTransactions();
-        showToast("🗑️ Audit log cleared.");
+        showToast("Audit log cleared.");
     } catch (e) {
         alert("Failed to clear log: " + e.message);
     }
