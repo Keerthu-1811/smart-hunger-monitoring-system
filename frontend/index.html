@@ -24,376 +24,466 @@
         </div>
     </header>
 
+    <!-- Role Switcher Navigation Bar -->
+    <nav class="role-nav-bar">
+        <div class="role-tabs-wrapper">
+            <button class="role-tab active" id="tabRoleShop" data-role="SHOP" onclick="switchRoleView('SHOP')">
+                <span class="role-tab-icon">🏪</span>
+                <div class="role-tab-text">
+                    <span class="role-tab-title">Ration Shop Operator</span>
+                    <span class="role-tab-desc">Counter Dispense & Local Inventory</span>
+                </div>
+            </button>
+            <button class="role-tab" id="tabRoleAuthority" data-role="AUTHORITY" onclick="switchRoleView('AUTHORITY')">
+                <span class="role-tab-icon">🏛️</span>
+                <div class="role-tab-text">
+                    <span class="role-tab-title">Central Authority</span>
+                    <span class="role-tab-desc">Logistics & 5-Shop Network</span>
+                </div>
+            </button>
+            <button class="role-tab" id="tabRoleOfficer" data-role="OFFICER" onclick="switchRoleView('OFFICER')">
+                <span class="role-tab-icon">🕵️</span>
+                <div class="role-tab-text">
+                    <span class="role-tab-title">Inspecting Officer</span>
+                    <span class="role-tab-desc">Audit & SHA-256 Ledger</span>
+                </div>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Active Role Context Banner -->
+    <div class="role-context-banner" id="roleContextBanner">
+        <div class="context-left">
+            <span class="context-badge badge-shop" id="roleBadge">🏪 Role: Ration Shop Operator</span>
+            <span class="context-desc" id="roleDesc">Point-of-Sale counter dispensing, beneficiary quota verification, and local store inventory.</span>
+        </div>
+        <div class="context-right" id="roleControlsSlot">
+            <!-- Populated dynamically with operator shop switcher -->
+        </div>
+    </div>
+
     <main>
-        <!-- 1. Executive Metric Summary Cards -->
-        <section class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-icon">🏬</div>
-                <div class="metric-content">
-                    <span class="metric-label">Monitored Shops</span>
-                    <span class="metric-val" id="totalShopsVal">5</span>
-                </div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-icon">📦</div>
-                <div class="metric-content">
-                    <span class="metric-label">Commodity Streams</span>
-                    <span class="metric-val" id="totalItemsVal">25</span>
-                </div>
-            </div>
-            <div class="metric-card risk-card">
-                <div class="metric-icon">🚨</div>
-                <div class="metric-content">
-                    <span class="metric-label">Critical Shortages</span>
-                    <span class="metric-val" id="highRiskVal">0</span>
-                </div>
-            </div>
-            <div class="metric-card medium-risk-card">
-                <div class="metric-icon">⚡</div>
-                <div class="metric-content">
-                    <span class="metric-label">Rapid Depletions</span>
-                    <span class="metric-val" id="mediumRiskVal">0</span>
-                </div>
-            </div>
-            <div class="metric-card success-card">
-                <div class="metric-icon">🚚</div>
-                <div class="metric-content">
-                    <span class="metric-label">Redistribution Directives</span>
-                    <span class="metric-val" id="redistCountVal">0</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- 2. Interactive Testing & Simulation Suite -->
-        <section class="panel simulator-panel">
-            <div class="simulator-header">
-                <div>
-                    <h2>🧪 Simulation & Testing Control Center</h2>
-                    <p class="panel-desc">Test real-time IoT events, simulate emergency food shortages, and execute redistribution algorithms with 1 click.</p>
-                </div>
-                <button class="btn-toggle" id="toggleSimBtn">Hide Controls</button>
-            </div>
-            <div class="simulator-body" id="simulatorBody">
-                <div class="action-buttons-group">
-                    <button class="btn btn-primary" id="btnSeed">
-                        <span>🌱</span> Seed 5 Shops Baseline
-                    </button>
-                    <button class="btn btn-danger" id="btnShortage">
-                        <span>🚨</span> Simulate Emergency Shortages
-                    </button>
-                    <button class="btn btn-success" id="btnApplyAll">
-                        <span>🚚</span> Execute All Transfers
-                    </button>
-                    <button class="btn btn-secondary" id="btnReset">
-                        <span>🔄</span> Reset All Data
-                    </button>
-                </div>
-
-                <!-- Custom Injection Form -->
-                <div class="custom-inject-box">
-                    <span class="inject-title">✏️ Quick Manual Stock Injection:</span>
-                    <div class="inject-form">
-                        <select id="injectShopSelect">
-                            <option value="Shop 1 (Central Hub)">Shop 1 (Central Hub)</option>
-                            <option value="Shop 2 (North Market)">Shop 2 (North Market)</option>
-                            <option value="Shop 3 (South Depot)">Shop 3 (South Depot)</option>
-                            <option value="Shop 4 (East District)">Shop 4 (East District)</option>
-                            <option value="Shop 5 (West Center)">Shop 5 (West Center)</option>
-                        </select>
-                        <select id="injectItemSelect">
-                            <option value="Rice">Rice 🍚</option>
-                            <option value="Sugar">Sugar 🍬</option>
-                            <option value="Wheat">Wheat 🌾</option>
-                            <option value="Toor Dal">Toor Dal 🥣</option>
-                            <option value="Palm Oil">Palm Oil 🛢️</option>
-                        </select>
-                        <input type="number" id="injectWeightInput" placeholder="Weight (kg/L)" min="0" max="500" step="0.5" value="15">
-                        <button class="btn btn-inject" id="btnInject">Inject Sensor Reading</button>
+        <!-- ============================================================== -->
+        <!-- ROLE VIEW 1: RATION SHOP OPERATOR                             -->
+        <!-- ============================================================== -->
+        <div class="role-view" id="viewShop">
+            <!-- Local Store Inventory Overview Card for Selected Shop -->
+            <section class="panel local-inventory-panel" id="operatorLocalInventoryPanel">
+                <div class="panel-header-with-badge">
+                    <div>
+                        <h2>📦 <span id="opShopNameTitle">Shop 1 (Central Hub)</span> — Current Inventory & Reserves</h2>
+                        <p class="panel-desc">Real-time stock levels, daily deliveries, and safe reserve buffer for the active Fair Price Shop.</p>
+                    </div>
+                    <div class="station-status-badge">
+                        <span class="status-dot green"></span> Counter Terminal Online
                     </div>
                 </div>
 
-                <div class="sim-toast" id="simToast">Ready for testing. Select an action above.</div>
-            </div>
-        </section>
-
-        <!-- 3. Dynamic Redistribution & Alerts Split Section -->
-        <div class="top-panels">
-            <!-- Redistribution Panel -->
-            <section class="panel redist-panel">
-                <div class="panel-header-with-badge">
-                    <h2>🔄 Item-Aware Redistribution Recommendations</h2>
-                    <span class="badge-counter" id="redistCounterBadge">0 Active</span>
-                </div>
-                <p class="panel-desc">Autonomous matchmaking matches surplus shops with critical deficit shops for matching commodities.</p>
-                <div id="redistListContainer" class="redist-list">
-                    <div class="empty-state">Calculating redistribution directives...</div>
+                <div class="operator-local-grid" id="operatorLocalStockGrid">
+                    <!-- Populated dynamically with 5 commodity cards -->
                 </div>
             </section>
 
-            <!-- Alerts Panel -->
-            <section class="panel alerts-panel">
+            <!-- Module M1: Beneficiary Quota Verification -->
+            <section class="panel beneficiary-panel" id="shopBeneficiaryPanel">
                 <div class="panel-header-with-badge">
-                    <h2>⚠️ Critical Alerts & Depletion Warnings</h2>
-                    <span class="badge-counter alert-counter" id="alertCounterBadge">0 Alerts</span>
+                    <div>
+                        <h2>👥 Beneficiary Quota Verification (Module M1)</h2>
+                        <p class="panel-desc">Look up registered households to inspect live monthly entitlement balances across all 5 commodities.</p>
+                    </div>
+                    <div class="quick-cards-group">
+                        <span class="quick-label">Sample Cards:</span>
+                        <button class="btn-chip" onclick="lookupBeneficiary('TN-PDS-1001')">TN-PDS-1001 (AAY)</button>
+                        <button class="btn-chip" onclick="lookupBeneficiary('TN-PDS-2002')">TN-PDS-2002 (PHH)</button>
+                        <button class="btn-chip" onclick="lookupBeneficiary('TN-PDS-5002')">TN-PDS-5002 (NPHH)</button>
+                    </div>
                 </div>
-                <p class="panel-desc">Dynamic 24-hour sliding analytics flagging stockouts and anomalous consumption velocities.</p>
-                <div id="alertsListContainer" class="alerts-list">
-                    <div class="empty-state">No active alerts. Systems normal.</div>
+
+                <div class="beneficiary-lookup-bar">
+                    <input type="text" id="cardLookupInput" placeholder="Enter Ration Card No. (e.g., TN-PDS-1001)..." value="TN-PDS-1001">
+                    <button class="btn btn-primary" id="btnLookupCard">🔍 Fetch Entitlement</button>
+                </div>
+
+                <!-- Single Beneficiary Card Display -->
+                <div id="beneficiaryCardContainer" class="beneficiary-result-box">
+                    <p class="empty-state">Enter a Ration Card number or click a sample card above to inspect live entitlements.</p>
+                </div>
+            </section>
+
+            <!-- Module M2, M3, M4: PDS Dispensing & 3-Way Verification Station -->
+            <section class="panel station-panel" id="verificationStationPanel">
+                <div class="panel-header-with-badge">
+                    <div>
+                        <h2>⚖️ Counter Dispense & 3-Way Verification Station</h2>
+                        <p class="panel-desc">Replicating <strong>M2 (Digital Scale)</strong> and <strong>M3 (AI Vision Camera)</strong> cross-referenced against <strong>M1 Entitlements</strong>.</p>
+                    </div>
+                    <div class="station-status-badge">
+                        <span class="status-dot green"></span> Simulators Ready
+                    </div>
+                </div>
+
+                <!-- Quick 1-Click Scenario Preset Buttons -->
+                <div class="test-scenarios-strip">
+                    <span class="strip-label">⚡ 1-Click Verification & Fraud Presets:</span>
+                    <button class="preset-btn valid" onclick="loadTestPreset('VALID')">🟢 Valid Dispense (All Match)</button>
+                    <button class="preset-btn fraud" onclick="loadTestPreset('VISION_MISMATCH')">🚨 Vision Mismatch (Commodity Fraud)</button>
+                    <button class="preset-btn fraud" onclick="loadTestPreset('QUOTA_EXCEEDED')">🚨 Quota Over-dispense (Exceeds Limit)</button>
+                    <button class="preset-btn fraud" onclick="loadTestPreset('ZERO_WEIGHT')">🚨 Scale Error (Zero / Tared)</button>
+                </div>
+
+                <!-- 3 Hardware/Software Columns -->
+                <div class="station-grid">
+                    <!-- Column 1: M1 Beneficiary & Claim -->
+                    <div class="station-card col-m1">
+                        <div class="station-card-header">
+                            <span class="col-tag m1-tag">M1: Entitlement</span>
+                            <h3>👤 Beneficiary & Claim</h3>
+                        </div>
+                        <div class="form-group">
+                            <label for="dispenseCardSelect">Ration Card No.</label>
+                            <select id="dispenseCardSelect" class="form-select" onchange="onStationBeneficiaryChange()">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div id="stationBeneficiaryInfo" class="station-subcard">
+                            <div class="info-row"><span>Head:</span> <strong id="stHeadName">-</strong></div>
+                            <div class="info-row"><span>Type:</span> <span id="stCardType" class="badge-type">-</span></div>
+                            <div class="info-row"><span>Shop:</span> <strong id="stShopName">-</strong></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="dispenseCommoditySelect">Claimed Commodity</label>
+                            <select id="dispenseCommoditySelect" class="form-select" onchange="onStationCommodityChange()">
+                                <option value="Rice">Rice 🍚</option>
+                                <option value="Sugar">Sugar 🍬</option>
+                                <option value="Wheat">Wheat 🌾</option>
+                                <option value="Toor Dal">Toor Dal 🥣</option>
+                                <option value="Palm Oil">Palm Oil 🛢️</option>
+                            </select>
+                        </div>
+                        <div class="quota-pill" id="stRemainingQuotaBox">
+                            Remaining Monthly Quota: <strong id="stQuotaVal">-- kg</strong>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: M2 Load Cell Weight Entry -->
+                    <div class="station-card col-m2">
+                        <div class="station-card-header">
+                            <span class="col-tag m2-tag">M2: Measured Weight</span>
+                            <h3>⚖️ Scale Reading Input</h3>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="m2WeightInput">Enter Measured Weight:</label>
+                            <div class="weight-input-wrap">
+                                <input type="number" id="m2WeightInput" min="0" max="60" step="0.1" value="5.0">
+                                <span class="input-unit-badge" id="scaleInputUnit">kg</span>
+                                <button type="button" class="btn-tare" onclick="tareScale()" title="Zero Scale Weight">Zero 0</button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Weight Buttons -->
+                        <div class="quick-weights">
+                            <span class="quick-title">Quick Preset Weights:</span>
+                            <div class="btn-group-wrap">
+                                <button type="button" class="btn-chip-w" onclick="setStationWeight(1.0)">1 kg</button>
+                                <button type="button" class="btn-chip-w" onclick="setStationWeight(2.0)">2 kg</button>
+                                <button type="button" class="btn-chip-w" onclick="setStationWeight(5.0)">5 kg</button>
+                                <button type="button" class="btn-chip-w" onclick="setStationWeight(10.0)">10 kg</button>
+                                <button type="button" class="btn-chip-w" onclick="setStationWeight(20.0)">20 kg</button>
+                                <button type="button" class="btn-chip-w" onclick="setStationWeight(35.0)">35 kg</button>
+                            </div>
+                        </div>
+
+                        <div class="station-status-pill">
+                            <span>Scale Calibration:</span> <strong style="color: #10b981;">Online & Stable</strong>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: M3 Vision Commodity Selector -->
+                    <div class="station-card col-m3">
+                        <div class="station-card-header">
+                            <span class="col-tag m3-tag">M3: Vision Classifier</span>
+                            <h3>📷 Detected Commodity</h3>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="m3VisionSelect">Commodity Detected by Camera:</label>
+                            <select id="m3VisionSelect" class="form-select">
+                                <option value="Rice">Rice 🍚 (Identified Grain)</option>
+                                <option value="Sugar">Sugar 🍬 (Refined Crystal)</option>
+                                <option value="Wheat">Wheat 🌾 (Whole Grain)</option>
+                                <option value="Toor Dal">Toor Dal 🥣 (Split Pigeon Pea)</option>
+                                <option value="Palm Oil">Palm Oil 🛢️ (Edible Oil Canister)</option>
+                                <option value="Foreign Item">⚠️ Foreign Item / Adulteration</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-top: 0.25rem;">
+                            <button type="button" class="btn-sync-vision" style="width: 100%;" onclick="syncVisionWithClaim()">🔄 Match Claimed Commodity</button>
+                        </div>
+
+                        <div class="station-status-pill">
+                            <span>Classifier Status:</span> <strong style="color: #a855f7;">Optical Feed Active</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verification Action & Verdict Banner -->
+                <div class="verification-action-bar">
+                    <button class="btn btn-primary btn-large" id="btnRunVerification" onclick="runThreeWayVerification()">
+                        🔍 Run 3-Way Verification Check
+                    </button>
+                    <button class="btn btn-success btn-large" id="btnCommitDispense" onclick="executePdsDispense()">
+                        ✅ Approve & Dispense Commodity
+                    </button>
+                </div>
+
+                <!-- Live Verdict Container -->
+                <div id="verificationVerdictContainer" class="verdict-container" style="display: none;">
+                    <!-- Filled dynamically with pass/fail badges -->
+                </div>
+            </section>
+
+            <!-- Local Daily Dispense Receipts Log -->
+            <section class="panel receipts-panel" id="operatorDailyReceiptsPanel">
+                <div class="panel-header-with-badge">
+                    <div>
+                        <h2>📋 Local Dispense Receipts (<span id="opReceiptsShopLabel">Shop 1</span>)</h2>
+                        <p class="panel-desc">Chronological register of transactions executed at this counter terminal.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="renderShopOperatorView()">🔄 Refresh Receipts</button>
+                </div>
+                <div id="operatorReceiptsTableContainer" class="audit-table-wrap">
+                    <p class="empty-state">Loading receipts for this shop...</p>
                 </div>
             </section>
         </div>
 
-        <!-- 4. Multi-Commodity Stock Matrix -->
-        <section class="panel stock-panel">
-            <div class="matrix-header">
-                <div>
-                    <h2>📊 5 Shops & 5 Commodities Stock Matrix</h2>
-                    <p class="panel-desc">Live weights, delivery totals, 24h average consumption rates, and dynamic safety status.</p>
-                </div>
-                <!-- Commodity Filter Tabs -->
-                <div class="filter-tabs" id="filterTabs">
-                    <button class="tab-btn active" data-item="ALL">All Items (25)</button>
-                    <button class="tab-btn" data-item="Rice">Rice 🍚</button>
-                    <button class="tab-btn" data-item="Sugar">Sugar 🍬</button>
-                    <button class="tab-btn" data-item="Wheat">Wheat 🌾</button>
-                    <button class="tab-btn" data-item="Toor Dal">Toor Dal 🥣</button>
-                    <button class="tab-btn" data-item="Palm Oil">Palm Oil 🛢️</button>
-                </div>
-            </div>
-
-            <div id="shopsContainer" class="shops-container">
-                <p class="empty-state">Loading stock matrix...</p>
-            </div>
-        </section>
-
-        <!-- 5. Module M1: Beneficiary Entitlement Directory -->
-        <section class="panel beneficiary-panel">
-            <div class="panel-header-with-badge">
-                <div>
-                    <h2>👥 Module M1: PDS Beneficiary Entitlement Directory</h2>
-                    <p class="panel-desc">Simulated Aadhaar / Ration Card database providing monthly quota entitlements across the 5 commodities.</p>
-                </div>
-                <div class="quick-cards-group">
-                    <span class="quick-label">Sample Cards:</span>
-                    <button class="btn-chip" onclick="lookupBeneficiary('TN-PDS-1001')">TN-PDS-1001 (AAY)</button>
-                    <button class="btn-chip" onclick="lookupBeneficiary('TN-PDS-2002')">TN-PDS-2002 (PHH)</button>
-                    <button class="btn-chip" onclick="lookupBeneficiary('TN-PDS-5002')">TN-PDS-5002 (NPHH)</button>
-                </div>
-            </div>
-
-            <div class="beneficiary-lookup-bar">
-                <input type="text" id="cardLookupInput" placeholder="Enter Ration Card No. (e.g., TN-PDS-1001)..." value="TN-PDS-1001">
-                <button class="btn btn-primary" id="btnLookupCard">🔍 Fetch Entitlement</button>
-            </div>
-
-            <!-- Single Beneficiary Card Display -->
-            <div id="beneficiaryCardContainer" class="beneficiary-result-box">
-                <p class="empty-state">Enter a Ration Card number or click a sample card above to inspect live entitlements.</p>
-            </div>
-
-            <!-- Full Beneficiaries Registry Table (Collapsible) -->
-            <div class="registry-toggle-row">
-                <button class="btn-toggle" id="btnToggleRegistry">Show Full 5-Shop Beneficiary Registry (12 Households)</button>
-            </div>
-            <div id="registryTableContainer" class="registry-table-wrap" style="display: none;">
-                <p class="empty-state">Loading registry...</p>
-            </div>
-        </section>
-
-        <!-- 6. PDS Dispensing & 3-Way Verification Station (Replicating M2 Load Cell & M3 Vision) -->
-        <section class="panel station-panel" id="verificationStationPanel">
-            <div class="panel-header-with-badge">
-                <div>
-                    <h2>⚖️ PDS Dispense & 3-Way Verification Station</h2>
-                    <p class="panel-desc">Interactive hardware simulators for <strong>M2 (Digital Load Cell Scale)</strong> and <strong>M3 (AI Vision Commodity Classifier)</strong> cross-referenced against <strong>M1 Entitlements</strong>.</p>
-                </div>
-                <div class="station-status-badge">
-                    <span class="status-dot green"></span> Simulators Ready
-                </div>
-            </div>
-
-            <!-- Quick 1-Click Scenario Preset Buttons -->
-            <div class="test-scenarios-strip">
-                <span class="strip-label">⚡ 1-Click Fraud & Verification Presets:</span>
-                <button class="preset-btn valid" onclick="loadTestPreset('VALID')">🟢 Valid Dispense (All Match)</button>
-                <button class="preset-btn fraud" onclick="loadTestPreset('VISION_MISMATCH')">🚨 Vision Mismatch (Commodity Fraud)</button>
-                <button class="preset-btn fraud" onclick="loadTestPreset('QUOTA_EXCEEDED')">🚨 Quota Over-dispense (Exceeds Limit)</button>
-                <button class="preset-btn fraud" onclick="loadTestPreset('ZERO_WEIGHT')">🚨 Scale Error (Zero / Tared)</button>
-            </div>
-
-            <!-- 3 Hardware/Software Columns -->
-            <div class="station-grid">
-                <!-- Column 1: M1 Beneficiary & Claim -->
-                <div class="station-card col-m1">
-                    <div class="station-card-header">
-                        <span class="col-tag m1-tag">M1: Entitlement</span>
-                        <h3>👤 Beneficiary & Claim</h3>
-                    </div>
-                    <div class="form-group">
-                        <label for="dispenseCardSelect">Ration Card No.</label>
-                        <select id="dispenseCardSelect" class="form-select" onchange="onStationBeneficiaryChange()">
-                            <!-- Populated dynamically -->
-                        </select>
-                    </div>
-                    <div id="stationBeneficiaryInfo" class="station-subcard">
-                        <div class="info-row"><span>Head:</span> <strong id="stHeadName">-</strong></div>
-                        <div class="info-row"><span>Type:</span> <span id="stCardType" class="badge-type">-</span></div>
-                        <div class="info-row"><span>Shop:</span> <strong id="stShopName">-</strong></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="dispenseCommoditySelect">Claimed Commodity</label>
-                        <select id="dispenseCommoditySelect" class="form-select" onchange="onStationCommodityChange()">
-                            <option value="Rice">Rice 🍚</option>
-                            <option value="Sugar">Sugar 🍬</option>
-                            <option value="Wheat">Wheat 🌾</option>
-                            <option value="Toor Dal">Toor Dal 🥣</option>
-                            <option value="Palm Oil">Palm Oil 🛢️</option>
-                        </select>
-                    </div>
-                    <div class="quota-pill" id="stRemainingQuotaBox">
-                        Remaining Monthly Quota: <strong id="stQuotaVal">-- kg</strong>
+        <!-- ============================================================== -->
+        <!-- ROLE VIEW 2: CENTRAL AUTHORITY                                -->
+        <!-- ============================================================== -->
+        <div class="role-view" id="viewAuthority" style="display: none;">
+            <!-- 1. Executive Metric Summary Cards -->
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">🏬</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Monitored Shops</span>
+                        <span class="metric-val" id="totalShopsVal">5</span>
                     </div>
                 </div>
+                <div class="metric-card">
+                    <div class="metric-icon">📦</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Commodity Streams</span>
+                        <span class="metric-val" id="totalItemsVal">25</span>
+                    </div>
+                </div>
+                <div class="metric-card risk-card">
+                    <div class="metric-icon">🚨</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Critical Shortages</span>
+                        <span class="metric-val" id="highRiskVal">0</span>
+                    </div>
+                </div>
+                <div class="metric-card medium-risk-card">
+                    <div class="metric-icon">⚡</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Rapid Depletions</span>
+                        <span class="metric-val" id="mediumRiskVal">0</span>
+                    </div>
+                </div>
+                <div class="metric-card success-card">
+                    <div class="metric-icon">🚚</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Redistribution Directives</span>
+                        <span class="metric-val" id="redistCountVal">0</span>
+                    </div>
+                </div>
+            </section>
 
-                <!-- Column 2: M2 Load Cell Weight Entry -->
-                <div class="station-card col-m2">
-                    <div class="station-card-header">
-                        <span class="col-tag m2-tag">M2: Measured Weight</span>
-                        <h3>⚖️ Scale Reading Input</h3>
+            <!-- 2. Interactive Testing & Simulation Suite -->
+            <section class="panel simulator-panel">
+                <div class="simulator-header">
+                    <div>
+                        <h2>🧪 Simulation & Testing Control Center</h2>
+                        <p class="panel-desc">Test real-time IoT events, simulate emergency food shortages, and execute redistribution algorithms with 1 click.</p>
+                    </div>
+                    <button class="btn-toggle" id="toggleSimBtn">Hide Controls</button>
+                </div>
+                <div class="simulator-body" id="simulatorBody">
+                    <div class="action-buttons-group">
+                        <button class="btn btn-primary" id="btnSeed">
+                            <span>🌱</span> Seed 5 Shops Baseline
+                        </button>
+                        <button class="btn btn-danger" id="btnShortage">
+                            <span>🚨</span> Simulate Emergency Shortages
+                        </button>
+                        <button class="btn btn-success" id="btnApplyAll">
+                            <span>🚚</span> Execute All Transfers
+                        </button>
+                        <button class="btn btn-secondary" id="btnReset">
+                            <span>🔄</span> Reset All Data
+                        </button>
                     </div>
 
-                    <div class="form-group">
-                        <label for="m2WeightInput">Enter Measured Weight:</label>
-                        <div class="weight-input-wrap">
-                            <input type="number" id="m2WeightInput" min="0" max="60" step="0.1" value="5.0">
-                            <span class="input-unit-badge" id="scaleInputUnit">kg</span>
-                            <button type="button" class="btn-tare" onclick="tareScale()" title="Zero Scale Weight">Zero 0</button>
+                    <!-- Custom Injection Form -->
+                    <div class="custom-inject-box">
+                        <span class="inject-title">✏️ Quick Manual Stock Injection:</span>
+                        <div class="inject-form">
+                            <select id="injectShopSelect">
+                                <option value="Shop 1 (Central Hub)">Shop 1 (Central Hub)</option>
+                                <option value="Shop 2 (North Market)">Shop 2 (North Market)</option>
+                                <option value="Shop 3 (South Depot)">Shop 3 (South Depot)</option>
+                                <option value="Shop 4 (East District)">Shop 4 (East District)</option>
+                                <option value="Shop 5 (West Center)">Shop 5 (West Center)</option>
+                            </select>
+                            <select id="injectItemSelect">
+                                <option value="Rice">Rice 🍚</option>
+                                <option value="Sugar">Sugar 🍬</option>
+                                <option value="Wheat">Wheat 🌾</option>
+                                <option value="Toor Dal">Toor Dal 🥣</option>
+                                <option value="Palm Oil">Palm Oil 🛢️</option>
+                            </select>
+                            <input type="number" id="injectWeightInput" placeholder="Weight (kg/L)" min="0" max="500" step="0.5" value="15">
+                            <button class="btn btn-inject" id="btnInject">Inject Sensor Reading</button>
                         </div>
                     </div>
 
-                    <!-- Quick Weight Buttons -->
-                    <div class="quick-weights">
-                        <span class="quick-title">Quick Preset Weights:</span>
-                        <div class="btn-group-wrap">
-                            <button type="button" class="btn-chip-w" onclick="setStationWeight(1.0)">1 kg</button>
-                            <button type="button" class="btn-chip-w" onclick="setStationWeight(2.0)">2 kg</button>
-                            <button type="button" class="btn-chip-w" onclick="setStationWeight(5.0)">5 kg</button>
-                            <button type="button" class="btn-chip-w" onclick="setStationWeight(10.0)">10 kg</button>
-                            <button type="button" class="btn-chip-w" onclick="setStationWeight(20.0)">20 kg</button>
-                            <button type="button" class="btn-chip-w" onclick="setStationWeight(35.0)">35 kg</button>
-                        </div>
-                    </div>
+                    <div class="sim-toast" id="simToast">Ready for testing. Select an action above.</div>
+                </div>
+            </section>
 
-                    <div class="station-status-pill">
-                        <span>Scale Calibration:</span> <strong style="color: #10b981;">Online & Stable</strong>
+            <!-- 3. Dynamic Redistribution & Alerts Split Section -->
+            <div class="top-panels">
+                <!-- Redistribution Panel -->
+                <section class="panel redist-panel">
+                    <div class="panel-header-with-badge">
+                        <h2>🔄 Item-Aware Redistribution Recommendations (Module M7)</h2>
+                        <span class="badge-counter" id="redistCounterBadge">0 Active</span>
+                    </div>
+                    <p class="panel-desc">Autonomous matchmaking matches surplus shops with critical deficit shops for matching commodities.</p>
+                    <div id="redistListContainer" class="redist-list">
+                        <div class="empty-state">Calculating redistribution directives...</div>
+                    </div>
+                </section>
+
+                <!-- Alerts Panel -->
+                <section class="panel alerts-panel">
+                    <div class="panel-header-with-badge">
+                        <h2>⚠️ Critical Alerts & Depletion Warnings</h2>
+                        <span class="badge-counter alert-counter" id="alertCounterBadge">0 Alerts</span>
+                    </div>
+                    <p class="panel-desc">Dynamic 24-hour sliding analytics flagging stockouts and anomalous consumption velocities.</p>
+                    <div id="alertsListContainer" class="alerts-list">
+                        <div class="empty-state">No active alerts. Systems normal.</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 4. Multi-Commodity Stock Matrix -->
+            <section class="panel stock-panel">
+                <div class="matrix-header">
+                    <div>
+                        <h2>📊 5 Shops & 5 Commodities Network Stock Matrix</h2>
+                        <p class="panel-desc">Live weights, delivery totals, 24h average consumption rates, and dynamic safety status across all 25 streams.</p>
+                    </div>
+                    <!-- Commodity Filter Tabs -->
+                    <div class="filter-tabs" id="filterTabs">
+                        <button class="tab-btn active" data-item="ALL">All Items (25)</button>
+                        <button class="tab-btn" data-item="Rice">Rice 🍚</button>
+                        <button class="tab-btn" data-item="Sugar">Sugar 🍬</button>
+                        <button class="tab-btn" data-item="Wheat">Wheat 🌾</button>
+                        <button class="tab-btn" data-item="Toor Dal">Toor Dal 🥣</button>
+                        <button class="tab-btn" data-item="Palm Oil">Palm Oil 🛢️</button>
                     </div>
                 </div>
 
-                <!-- Column 3: M3 Vision Commodity Selector -->
-                <div class="station-card col-m3">
-                    <div class="station-card-header">
-                        <span class="col-tag m3-tag">M3: Vision Classifier</span>
-                        <h3>📷 Detected Commodity</h3>
+                <div id="shopsContainer" class="shops-container">
+                    <p class="empty-state">Loading stock matrix...</p>
+                </div>
+            </section>
+
+            <!-- 5. Master Beneficiary Registry Table (Full 12 Households) -->
+            <section class="panel registry-master-panel" id="masterRegistryPanel">
+                <div class="panel-header-with-badge">
+                    <div>
+                        <h2>👥 Master Beneficiary Registry (All 12 Households Across 5 Shops)</h2>
+                        <p class="panel-desc">Central PDS database management with live entitlement tracking and quota allocations.</p>
+                    </div>
+                    <button class="btn-toggle" id="btnToggleRegistry">Toggle Registry View</button>
+                </div>
+                <div id="registryTableContainer" class="registry-table-wrap">
+                    <p class="empty-state">Loading master registry...</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- ROLE VIEW 3: INSPECTING OFFICER                               -->
+        <!-- ============================================================== -->
+        <div class="role-view" id="viewOfficer" style="display: none;">
+            <!-- Module M5 & M6: Inspecting Officer Audit & Tamper-Evident SHA-256 Ledger -->
+            <section class="panel audit-panel" id="officerAuditPanel">
+                <div class="panel-header-with-badge">
+                    <div>
+                        <h2>🔐 Module M5 & M6: Inspecting Officer Audit & Cryptographic Ledger</h2>
+                        <p class="panel-desc">Cryptographically chained ledger: <code>current_hash = SHA256(prev_hash + tx_data)</code>. Filter flagged violations shop-by-shop and drill down into cryptographic proof.</p>
+                    </div>
+                    <div class="chain-status-badge" id="chainIntegrityBadge">
+                        <span class="status-dot green"></span> Chain Intact
+                    </div>
+                </div>
+
+                <!-- Inspecting Officer Filter Bar (Module M6) -->
+                <div class="audit-filter-bar">
+                    <div class="filter-group-status">
+                        <span class="filter-lbl">Status:</span>
+                        <button class="audit-filter-btn active" data-status="ALL" onclick="setAuditStatusFilter('ALL')">All Transactions</button>
+                        <button class="audit-filter-btn flag-btn" data-status="FLAGGED" onclick="setAuditStatusFilter('FLAGGED')">🚨 Flagged Only (<span id="flaggedCountBadge">0</span>)</button>
+                        <button class="audit-filter-btn pass-btn" data-status="APPROVED" onclick="setAuditStatusFilter('APPROVED')">✅ Approved</button>
                     </div>
 
-                    <div class="form-group">
-                        <label for="m3VisionSelect">Commodity Detected by Camera:</label>
-                        <select id="m3VisionSelect" class="form-select">
-                            <option value="Rice">Rice 🍚 (Identified Grain)</option>
-                            <option value="Sugar">Sugar 🍬 (Refined Crystal)</option>
-                            <option value="Wheat">Wheat 🌾 (Whole Grain)</option>
-                            <option value="Toor Dal">Toor Dal 🥣 (Split Pigeon Pea)</option>
-                            <option value="Palm Oil">Palm Oil 🛢️ (Edible Oil Canister)</option>
-                            <option value="Foreign Item">⚠️ Foreign Item / Adulteration</option>
+                    <div class="filter-group-shop">
+                        <label for="auditShopFilter">Shop:</label>
+                        <select id="auditShopFilter" class="form-select-sm" onchange="loadAuditTransactions()">
+                            <option value="">All Shops (5 Centers)</option>
+                            <option value="Shop 1">Shop 1 (Central Hub)</option>
+                            <option value="Shop 2">Shop 2 (North Market)</option>
+                            <option value="Shop 3">Shop 3 (South Depot)</option>
+                            <option value="Shop 4">Shop 4 (East District)</option>
+                            <option value="Shop 5">Shop 5 (West Center)</option>
                         </select>
                     </div>
 
-                    <div style="margin-top: 0.25rem;">
-                        <button type="button" class="btn-sync-vision" style="width: 100%;" onclick="syncVisionWithClaim()">🔄 Match Claimed Commodity</button>
-                    </div>
-
-                    <div class="station-status-pill">
-                        <span>Classifier Status:</span> <strong style="color: #a855f7;">Optical Feed Active</strong>
+                    <div class="filter-group-search">
+                        <input type="text" id="auditSearchInput" placeholder="Search Card or TX ID..." oninput="loadAuditTransactions()">
                     </div>
                 </div>
-            </div>
 
-            <!-- Verification Action & Verdict Banner -->
-            <div class="verification-action-bar">
-                <button class="btn btn-primary btn-large" id="btnRunVerification" onclick="runThreeWayVerification()">
-                    🔍 Run 3-Way Verification Check
-                </button>
-                <button class="btn btn-success btn-large" id="btnCommitDispense" onclick="executePdsDispense()">
-                    ✅ Approve & Dispense Commodity
-                </button>
-            </div>
-
-            <!-- Live Verdict Container -->
-            <div id="verificationVerdictContainer" class="verdict-container" style="display: none;">
-                <!-- Filled dynamically with pass/fail badges -->
-            </div>
-        </section>
-
-        <!-- 7. Module M5 & M6: Inspecting Officer Audit & Tamper-Evident SHA-256 Ledger -->
-        <section class="panel audit-panel" id="officerAuditPanel">
-            <div class="panel-header-with-badge">
-                <div>
-                    <h2>🔐 Module M5 & M6: Inspecting Officer Audit & Cryptographic Ledger</h2>
-                    <p class="panel-desc">Cryptographically chained ledger: <code>current_hash = SHA256(prev_hash + tx_data)</code>. Filter flagged violations shop-by-shop and drill down into cryptographic proof.</p>
-                </div>
-                <div class="chain-status-badge" id="chainIntegrityBadge">
-                    <span class="status-dot green"></span> Chain Intact
-                </div>
-            </div>
-
-            <!-- Inspecting Officer Filter Bar (Module M6) -->
-            <div class="audit-filter-bar">
-                <div class="filter-group-status">
-                    <span class="filter-lbl">Status:</span>
-                    <button class="audit-filter-btn active" data-status="ALL" onclick="setAuditStatusFilter('ALL')">All Transactions</button>
-                    <button class="audit-filter-btn flag-btn" data-status="FLAGGED" onclick="setAuditStatusFilter('FLAGGED')">🚨 Flagged Only (<span id="flaggedCountBadge">0</span>)</button>
-                    <button class="audit-filter-btn pass-btn" data-status="APPROVED" onclick="setAuditStatusFilter('APPROVED')">✅ Approved</button>
+                <!-- Tamper Demonstration & Maintenance Controls -->
+                <div class="audit-controls-strip">
+                    <div class="btn-group-left">
+                        <button class="btn btn-secondary btn-sm" onclick="loadAuditTransactions()">🔄 Refresh Audit Log</button>
+                        <button class="btn btn-warning btn-sm" onclick="triggerTamperDemo()" title="Simulate unauthorized modification to demonstrate chain break">⚠️ Demo: Simulate Ledger Tampering</button>
+                        <button class="btn btn-success btn-sm" onclick="triggerRepairDemo()" title="Restore valid chain state">🛡️ Repair / Restore Chain</button>
+                    </div>
+                    <div>
+                        <button class="btn btn-danger btn-sm" onclick="clearAuditLog()">🗑️ Clear Log</button>
+                    </div>
                 </div>
 
-                <div class="filter-group-shop">
-                    <label for="auditShopFilter">Shop:</label>
-                    <select id="auditShopFilter" class="form-select-sm" onchange="loadAuditTransactions()">
-                        <option value="">All Shops (5 Centers)</option>
-                        <option value="Shop 1">Shop 1 (Central Hub)</option>
-                        <option value="Shop 2">Shop 2 (North Market)</option>
-                        <option value="Shop 3">Shop 3 (South Depot)</option>
-                        <option value="Shop 4">Shop 4 (East District)</option>
-                        <option value="Shop 5">Shop 5 (West Center)</option>
-                    </select>
+                <!-- Chain Integrity Notification Banner -->
+                <div id="chainAlertBanner" style="display: none;"></div>
+
+                <!-- Audit Transactions Table -->
+                <div id="transactionsTableContainer" class="audit-table-wrap">
+                    <p class="empty-state">Loading cryptographic audit log...</p>
                 </div>
+            </section>
+        </div>
 
-                <div class="filter-group-search">
-                    <input type="text" id="auditSearchInput" placeholder="Search Card or TX ID..." oninput="loadAuditTransactions()">
-                </div>
-            </div>
-
-            <!-- Tamper Demonstration & Maintenance Controls -->
-            <div class="audit-controls-strip">
-                <div class="btn-group-left">
-                    <button class="btn btn-secondary btn-sm" onclick="loadAuditTransactions()">🔄 Refresh Audit Log</button>
-                    <button class="btn btn-warning btn-sm" onclick="triggerTamperDemo()" title="Simulate unauthorized modification to demonstrate chain break">⚠️ Demo: Simulate Ledger Tampering</button>
-                    <button class="btn btn-success btn-sm" onclick="triggerRepairDemo()" title="Restore valid chain state">🛡️ Repair / Restore Chain</button>
-                </div>
-                <div>
-                    <button class="btn btn-danger btn-sm" onclick="clearAuditLog()">🗑️ Clear Log</button>
-                </div>
-            </div>
-
-            <!-- Chain Integrity Notification Banner -->
-            <div id="chainAlertBanner" style="display: none;"></div>
-
-            <!-- Audit Transactions Table -->
-            <div id="transactionsTableContainer" class="audit-table-wrap">
-                <p class="empty-state">Loading cryptographic audit log...</p>
-            </div>
-        </section>
-
-        <!-- Inspecting Officer Transaction Drill-Down Modal (Module M6) -->
+        <!-- Inspecting Officer Transaction Drill-Down Modal (Module M6 - Accessible across dashboard) -->
         <div id="txDrillDownModal" class="modal-backdrop" style="display: none;">
             <div class="modal-dialog">
                 <div class="modal-header">

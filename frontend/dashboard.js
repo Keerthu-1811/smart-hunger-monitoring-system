@@ -1,6 +1,9 @@
 // Smart Hunger IoT - Frontend Dashboard Logic
 let currentData = null;
 let activeCommodityFilter = "ALL";
+let currentRole = 'SHOP';
+let activeOperatorShop = 'Shop 1 (Central Hub)';
+let allBeneficiariesCache = [];
 
 const COMMODITY_ICONS = {
     "Rice": "🍚",
@@ -8,6 +11,254 @@ const COMMODITY_ICONS = {
     "Wheat": "🌾",
     "Toor Dal": "🥣",
     "Palm Oil": "🛢️"
+};
+
+// ==========================================
+// ROLE-BASED NAVIGATION & MULTI-VIEW ARCHITECTURE
+// ==========================================
+window.switchRoleView = function(role) {
+    currentRole = role;
+
+    // 1. Update tab active state
+    document.querySelectorAll(".role-tab").forEach(tab => {
+        if (tab.getAttribute("data-role") === role) {
+            tab.classList.add("active");
+        } else {
+            tab.classList.remove("active");
+        }
+    });
+
+    // 2. Update context banner
+    const badgeEl = document.getElementById("roleBadge");
+    const descEl = document.getElementById("roleDesc");
+    const controlsSlot = document.getElementById("roleControlsSlot");
+
+    if (role === 'SHOP') {
+        if (badgeEl) {
+            badgeEl.className = "context-badge badge-shop";
+            badgeEl.textContent = "🏪 Role: Ration Shop Operator";
+        }
+        if (descEl) {
+            descEl.textContent = "Point-of-Sale counter dispensing, beneficiary quota verification, and local store inventory.";
+        }
+        if (controlsSlot) {
+            controlsSlot.innerHTML = `
+                <div class="operator-shop-picker-wrap">
+                    <label for="operatorShopPicker">Operating Center:</label>
+                    <select id="operatorShopPicker" onchange="onOperatorShopChange(this.value)">
+                        <option value="Shop 1 (Central Hub)" ${activeOperatorShop === 'Shop 1 (Central Hub)' ? 'selected' : ''}>Shop 1 (Central Hub)</option>
+                        <option value="Shop 2 (North Market)" ${activeOperatorShop === 'Shop 2 (North Market)' ? 'selected' : ''}>Shop 2 (North Market)</option>
+                        <option value="Shop 3 (South Depot)" ${activeOperatorShop === 'Shop 3 (South Depot)' ? 'selected' : ''}>Shop 3 (South Depot)</option>
+                        <option value="Shop 4 (East District)" ${activeOperatorShop === 'Shop 4 (East District)' ? 'selected' : ''}>Shop 4 (East District)</option>
+                        <option value="Shop 5 (West Center)" ${activeOperatorShop === 'Shop 5 (West Center)' ? 'selected' : ''}>Shop 5 (West Center)</option>
+                    </select>
+                </div>
+            `;
+        }
+    } else if (role === 'AUTHORITY') {
+        if (badgeEl) {
+            badgeEl.className = "context-badge badge-authority";
+            badgeEl.textContent = "🏛️ Role: Central Civil Supplies Authority";
+        }
+        if (descEl) {
+            descEl.textContent = "District-wide 5-shop multi-commodity monitoring, emergency shortage simulations, and autonomous redistribution.";
+        }
+        if (controlsSlot) {
+            controlsSlot.innerHTML = `<span style="font-size: 0.82rem; color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">● Central Overseer Mode</span>`;
+        }
+    } else if (role === 'OFFICER') {
+        if (badgeEl) {
+            badgeEl.className = "context-badge badge-officer";
+            badgeEl.textContent = "🕵️ Role: Vigilance & Inspecting Officer";
+        }
+        if (descEl) {
+            descEl.textContent = "Cryptographic SHA-256 tamper-evident ledger validation, anomaly investigation notes, and audit drill-downs.";
+        }
+        if (controlsSlot) {
+            controlsSlot.innerHTML = `<span style="font-size: 0.82rem; color: #f59e0b; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">● Cryptographic Auditor Mode</span>`;
+        }
+    }
+
+    // 3. Toggle role views
+    const viewShop = document.getElementById("viewShop");
+    const viewAuth = document.getElementById("viewAuthority");
+    const viewOff = document.getElementById("viewOfficer");
+
+    if (viewShop) viewShop.style.display = role === 'SHOP' ? 'block' : 'none';
+    if (viewAuth) viewAuth.style.display = role === 'AUTHORITY' ? 'block' : 'none';
+    if (viewOff) viewOff.style.display = role === 'OFFICER' ? 'block' : 'none';
+
+    // 4. Trigger target refreshes
+    if (role === 'SHOP') {
+        renderShopOperatorView();
+    } else if (role === 'AUTHORITY') {
+        loadData();
+    } else if (role === 'OFFICER') {
+        loadAuditTransactions();
+    }
+};
+
+window.onOperatorShopChange = async function(selectedShop) {
+    activeOperatorShop = selectedShop;
+    
+    // Update shop title in operator panel
+    const titleEl = document.getElementById("opShopNameTitle");
+    if (titleEl) titleEl.textContent = selectedShop;
+    const labelEl = document.getElementById("opReceiptsShopLabel");
+    if (labelEl) labelEl.textContent = selectedShop;
+
+    // Filter beneficiaries to prioritize or select assigned cardholders
+    await filterStationBeneficiariesByShop(selectedShop);
+
+    // Refresh operator local inventory & receipts
+    await renderShopOperatorView();
+};
+
+async function filterStationBeneficiariesByShop(shopName) {
+    const select = document.getElementById("dispenseCardSelect");
+    if (!select || !allBeneficiariesCache.length) return;
+
+    const shopMatches = allBeneficiariesCache.filter(b => b.assigned_shop_id === shopName);
+    const others = allBeneficiariesCache.filter(b => b.assigned_shop_id !== shopName);
+
+    let html = "";
+    if (shopMatches.length > 0) {
+        html += `<optgroup label="${shopName} Registered Beneficiaries">`;
+        html += shopMatches.map(b => `<option value="${b.ration_card_no}">${b.ration_card_no} - ${b.family_head_name} (${b.card_type})</option>`).join('');
+        html += `</optgroup>`;
+    }
+    if (others.length > 0) {
+        html += `<optgroup label="Other Center Registered Beneficiaries (Portability)">`;
+        html += others.map(b => `<option value="${b.ration_card_no}">${b.ration_card_no} - ${b.family_head_name} (${b.card_type}) [${b.assigned_shop_id}]</option>`).join('');
+        html += `</optgroup>`;
+    }
+    select.innerHTML = html;
+
+    // Pick first matching cardholder
+    if (shopMatches.length > 0) {
+        select.value = shopMatches[0].ration_card_no;
+        const lookupInput = document.getElementById("cardLookupInput");
+        if (lookupInput) lookupInput.value = shopMatches[0].ration_card_no;
+        if (window.lookupBeneficiary) {
+            window.lookupBeneficiary(shopMatches[0].ration_card_no);
+        }
+    }
+    await onStationBeneficiaryChange();
+}
+
+window.renderShopOperatorView = async function() {
+    const grid = document.getElementById("operatorLocalStockGrid");
+    const receiptsContainer = document.getElementById("operatorReceiptsTableContainer");
+    if (!grid) return;
+
+    // 1. Render Local Stock Grid for activeOperatorShop
+    if (currentData && currentData.shops) {
+        const shopData = currentData.shops.find(s => s.shop_name === activeOperatorShop);
+        if (shopData && shopData.items) {
+            grid.innerHTML = shopData.items.map(item => {
+                const icon = COMMODITY_ICONS[item.item_name] || "📦";
+                const riskClass = item.risk_level === "HIGH RISK" ? "high-risk" : (item.risk_level === "MEDIUM RISK" ? "medium-risk" : "safe");
+                const fillClass = item.risk_level === "HIGH RISK" ? "high" : (item.risk_level === "MEDIUM RISK" ? "medium" : "safe");
+                const percent = Math.min(100, Math.max(0, (item.current_weight / 250) * 100)).toFixed(0);
+
+                return `
+                    <div class="operator-item-card ${riskClass}">
+                        <div class="operator-item-top">
+                            <span class="operator-item-name">${icon} ${item.item_name}</span>
+                            <span class="status-badge ${item.risk_level === 'HIGH RISK' ? 'status-HIGH' : (item.risk_level === 'MEDIUM RISK' ? 'status-MEDIUM' : 'status-NORMAL')}">
+                                ${item.risk_level}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="operator-item-weight">${item.current_weight !== null ? item.current_weight.toFixed(1) : '--'}</span>
+                            <span class="operator-item-unit">${item.unit}</span>
+                        </div>
+                        <div class="operator-meter-bar">
+                            <div class="operator-meter-fill ${fillClass}" style="width: ${percent}%;"></div>
+                        </div>
+                        <div class="operator-stats-row">
+                            <span>Safe Buffer: <strong>${item.safe_buffer} ${item.unit}</strong></span>
+                            <span>Delivered: <strong>${item.total_weight} ${item.unit}</strong></span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            grid.innerHTML = `<p class="empty-state">No inventory metrics found for ${activeOperatorShop}.</p>`;
+        }
+    }
+
+    // 2. Render Local Receipts for activeOperatorShop
+    if (receiptsContainer) {
+        try {
+            const shortShop = activeOperatorShop.split(' ')[0] + ' ' + (activeOperatorShop.split(' ')[1] || '');
+            const res = await fetch(`http://localhost:3000/api/transactions?shop_id=${encodeURIComponent(shortShop.trim())}`);
+            const data = await res.json();
+            const txs = data.transactions || [];
+
+            if (txs.length === 0) {
+                receiptsContainer.innerHTML = `
+                    <div class="empty-state" style="padding: 1.5rem 1rem;">
+                        <p>No recent dispense transactions recorded for ${activeOperatorShop}.</p>
+                        <span style="font-size: 0.8rem; color: #64748b;">Execute a verified counter dispense above to log a receipt.</span>
+                    </div>
+                `;
+            } else {
+                const rows = txs.slice(0, 10).map(tx => {
+                    const time = new Date(tx.timestamp).toLocaleTimeString();
+                    const isApproved = tx.status === "APPROVED";
+                    const isTampered = tx.is_tampered || tx.hash_valid === false;
+                    const isOfficerApproved = tx.officer_resolution === "APPROVED_BY_OFFICER" || tx.investigation_status === "RESOLVED_EXPLAINED";
+
+                    let statusBadge = "";
+                    if (isTampered) {
+                        statusBadge = `<span class="status-badge status-HIGH">🚨 TAMPERED</span>`;
+                    } else if (isOfficerApproved && !isApproved) {
+                        statusBadge = `<span class="status-badge status-NORMAL">✅ RESOLVED</span>`;
+                    } else if (tx.officer_resolution === "PENALIZED_FRAUD") {
+                        statusBadge = `<span class="status-badge status-HIGH">⚖️ PENALIZED</span>`;
+                    } else if (isApproved) {
+                        statusBadge = `<span class="status-badge status-NORMAL">APPROVED</span>`;
+                    } else {
+                        statusBadge = `<span class="status-badge status-HIGH">FLAGGED</span>`;
+                    }
+
+                    return `
+                        <tr>
+                            <td><strong style="color: #38bdf8; font-family: monospace;">${tx.id}</strong></td>
+                            <td style="font-size: 0.78rem; color: #94a3b8;">${time}</td>
+                            <td><strong>${tx.card_no}</strong></td>
+                            <td>${COMMODITY_ICONS[tx.claimed_commodity] || '📦'} ${tx.claimed_commodity} (${tx.claimed_amount} ${tx.unit})</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <button class="btn-chip" onclick="openTxDrillDown('${tx.id}')">Inspect 🔍</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                receiptsContainer.innerHTML = `
+                    <table class="audit-table">
+                        <thead>
+                            <tr>
+                                <th>Receipt ID</th>
+                                <th>Timestamp</th>
+                                <th>Beneficiary Card</th>
+                                <th>Commodity Lifted</th>
+                                <th>Verdict</th>
+                                <th>Drill-Down</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                `;
+            }
+        } catch (e) {
+            receiptsContainer.innerHTML = `<p class="empty-state" style="color: #f43f5e;">Failed to load shop receipts: ${e.message}</p>`;
+        }
+    }
 };
 
 // ==========================================
@@ -26,6 +277,10 @@ async function loadData() {
         renderAlerts(data.alerts);
         renderRedistributions(data.redistributions);
         renderShopsMatrix(data.shops);
+
+        if (typeof renderShopOperatorView === "function") {
+            renderShopOperatorView();
+        }
     } catch (err) {
         console.error("Error fetching data:", err);
         updateHeaderStatus(false, null);
@@ -609,16 +864,8 @@ async function initStation() {
     try {
         const res = await fetch("http://localhost:3000/api/beneficiaries");
         const data = await res.json();
-        const select = document.getElementById("dispenseCardSelect");
-        if (!select) return;
-
-        select.innerHTML = (data.beneficiaries || []).map(b => `
-            <option value="${b.ration_card_no}">
-                ${b.ration_card_no} - ${b.family_head_name} (${b.card_type})
-            </option>
-        `).join('');
-
-        await onStationBeneficiaryChange();
+        allBeneficiariesCache = data.beneficiaries || [];
+        await filterStationBeneficiariesByShop(activeOperatorShop);
     } catch (e) {
         console.error("Error initializing verification station:", e);
     }
@@ -772,6 +1019,9 @@ window.executePdsDispense = async function() {
             await loadBeneficiariesRegistry();
         }
         await loadAuditTransactions();
+        if (typeof renderShopOperatorView === "function") {
+            await renderShopOperatorView();
+        }
     } catch (e) {
         verdictBox.innerHTML = `<div class="violation-box">❌ Dispense failed: ${e.message}</div>`;
     }
@@ -782,7 +1032,7 @@ function getStationPayload() {
     const claimed_commodity = document.getElementById("dispenseCommoditySelect").value;
     const measured_weight = parseFloat(document.getElementById("m2WeightInput").value) || 0;
     const vision_commodity = document.getElementById("m3VisionSelect").value;
-    const shop_id = currentStationBeneficiary?.assigned_shop_id || "Shop 1 (Central Hub)";
+    const shop_id = activeOperatorShop || currentStationBeneficiary?.assigned_shop_id || "Shop 1 (Central Hub)";
 
     return {
         card_no,
@@ -1293,6 +1543,7 @@ window.clearAuditLog = async function() {
 // ==========================================
 // 11. BOOTSTRAP
 // ==========================================
+switchRoleView('SHOP');
 loadData();
 window.lookupBeneficiary("TN-PDS-1001");
 initStation();
