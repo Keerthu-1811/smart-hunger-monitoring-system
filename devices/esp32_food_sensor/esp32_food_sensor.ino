@@ -1,89 +1,75 @@
-﻿// ============================================================
-//  Smart Hunger IoT -- ESP32 + HX711 Load Cell Firmware
-//  Reads real weight from a load cell via HX711 amplifier
-//  and POSTs readings to the Node.js backend every interval.
-//
-//  Libraries required (install via Arduino Library Manager):
-//    - HX711 by bogde           -> search "HX711 Arduino Library"
-//    - ArduinoJson by bblanchon -> search "ArduinoJson"
-//
-//  Wiring:
-//    HX711 DOUT -> GPIO 16  (DATA_PIN below)
-//    HX711 SCK  -> GPIO 17  (CLOCK_PIN below)
-//    HX711 VCC  -> 3.3V
-//    HX711 GND  -> GND
-//    Load cell wires -> HX711 E+, E-, A+, A-  (see your cell datasheet)
-// ============================================================
-
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <HX711.h>
 
 // ----------------------------------------------------------
-// 1. CONFIGURATION -- EDIT THESE FOR EACH ESP32 UNIT
+// 1. CONFIGURATION
 // ----------------------------------------------------------
 
 // WiFi credentials
-const char* WIFI_SSID     = "YourWiFiName";
-const char* WIFI_PASSWORD = "YourWiFiPassword";
+const char* WIFI_SSID     = "OPPOA785G";
+const char* WIFI_PASSWORD = "Alain1811";
 
-// Your PC local IP (run `ipconfig` on Windows to find it)
-// e.g. "http://192.168.1.5:3000/api/fooddata"
-const char* SERVER_URL = "http://192.168.1.100:3000/api/fooddata";
+// Backend URL
+const char* SERVER_URL = "http://10.118.37.248:3000/api/fooddata";
 
-// Shop this device is assigned to (must match exactly)
-// Options:
-//   "Shop 1 (Central Hub)"
-//   "Shop 2 (North Market)"
-//   "Shop 3 (South Depot)"
-//   "Shop 4 (East District)"
-//   "Shop 5 (West Center)"
+// Shop
 const char* SHOP_ID = "Shop 1 (Central Hub)";
 
-// Commodity this scale measures
-// Options: "Rice" | "Sugar" | "Wheat" | "Toor Dal" | "Palm Oil"
+// Commodity
 const char* ITEM_NAME = "Rice";
 
 // HX711 GPIO pins
-#define DATA_PIN  16
+#define DATA_PIN  18
 #define CLOCK_PIN 17
 
+// Push button
+#define BUTTON_PIN 4
+
 // ----- CALIBRATION -----
-// Set CALIBRATION_MODE to true, upload, place a known weight,
-// and adjust CALIBRATION_FACTOR until Serial Monitor shows the
-// correct kg. Then set CALIBRATION_MODE false and re-upload.
-#define CALIBRATION_MODE  false
-float CALIBRATION_FACTOR = -96650.0;  // Negative if reading is inverted
+#define CALIBRATION_MODE false
+float CALIBRATION_FACTOR = 300000;
 
-// How often to send a reading (ms)
-const unsigned long SEND_INTERVAL_MS = 8000;  // 8 seconds
-
-// Total known capacity of this container (kg or L)
-// Used to compute consumed_weight = capacity - current_weight
+// Total container capacity
 const float CONTAINER_CAPACITY_KG = 100.0;
+
+// Number of readings to average
+const int NUM_SAMPLES = 5;
 
 // ----------------------------------------------------------
 // 2. GLOBALS
 // ----------------------------------------------------------
+
 HX711 scale;
+
 float daily_total_stock = CONTAINER_CAPACITY_KG;
-unsigned long lastSendTime = 0;
+
+// Used to detect a new button press
+bool lastButtonState = HIGH;
 
 // ----------------------------------------------------------
 // 3. WIFI
 // ----------------------------------------------------------
+
 void connectWiFi() {
     Serial.printf("\n[WiFi] Connecting to %s", WIFI_SSID);
+
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
     int attempts = 0;
+
     while (WiFi.status() != WL_CONNECTED && attempts < 20) {
         delay(500);
         Serial.print(".");
         attempts++;
     }
+
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.printf("\n[WiFi] Connected! IP: %s\n", WiFi.localIP().toString().c_str());
+        Serial.printf(
+            "\n[WiFi] Connected! IP: %s\n",
+            WiFi.localIP().toString().c_str()
+        );
     } else {
         Serial.println("\n[WiFi] Failed. Will retry in loop.");
     }
@@ -92,16 +78,21 @@ void connectWiFi() {
 // ----------------------------------------------------------
 // 4. HTTP POST
 // ----------------------------------------------------------
+
 void sendToBackend(float currentWeight) {
+
     if (WiFi.status() != WL_CONNECTED) {
         Serial.println("[HTTP] WiFi disconnected, skipping.");
         return;
     }
 
     float consumed = daily_total_stock - currentWeight;
-    if (consumed < 0) consumed = 0;
+
+    if (consumed < 0)
+        consumed = 0;
 
     StaticJsonDocument<256> doc;
+
     doc["device_id"]       = SHOP_ID;
     doc["item_name"]       = ITEM_NAME;
     doc["weight"]          = round(currentWeight * 100.0) / 100.0;
@@ -109,31 +100,61 @@ void sendToBackend(float currentWeight) {
     doc["consumed_weight"] = round(consumed * 100.0) / 100.0;
 
     String payload;
+
     serializeJson(doc, payload);
 
-    Serial.printf("[HTTP] -> %s | %s | %.2f kg\n", SHOP_ID, ITEM_NAME, currentWeight);
+    Serial.printf(
+        "[HTTP] -> %s | %s | %.2f kg\n",
+        SHOP_ID,
+        ITEM_NAME,
+        currentWeight
+    );
+
     Serial.println("        Payload: " + payload);
 
+    WiFiClient client;
     HTTPClient http;
-    if (http.begin(SERVER_URL)) {
+
+    if (http.begin(client, SERVER_URL)) {
+
         http.addHeader("Content-Type", "application/json");
+
         int code = http.POST(payload);
+
         if (code > 0) {
-            Serial.printf("[HTTP] Response %d: %s\n", code, http.getString().c_str());
+
+            Serial.printf(
+                "[HTTP] Response %d: %s\n",
+                code,
+                http.getString().c_str()
+            );
+
         } else {
-            Serial.printf("[HTTP] POST failed: %s\n", HTTPClient::errorToString(code).c_str());
+
+            Serial.printf(
+                "[HTTP] POST failed: %s\n",
+                HTTPClient::errorToString(code).c_str()
+            );
         }
+
         http.end();
+
     } else {
-        Serial.println("[HTTP] Cannot connect. Check SERVER_URL and PC IP.");
+
+        Serial.println(
+            "[HTTP] Cannot connect. Check SERVER_URL and PC IP."
+        );
     }
 }
 
 // ----------------------------------------------------------
 // 5. SETUP
 // ----------------------------------------------------------
+
 void setup() {
+
     Serial.begin(115200);
+
     delay(200);
 
     Serial.println("\n================================");
@@ -142,58 +163,155 @@ void setup() {
     Serial.printf(" Item : %s\n", ITEM_NAME);
     Serial.println("================================");
 
+    // HX711 setup
     scale.begin(DATA_PIN, CLOCK_PIN);
+
     scale.set_scale(CALIBRATION_FACTOR);
-    scale.tare();  // Zero with nothing on scale
+
+    scale.tare();
+
     Serial.println("[Scale] HX711 ready. Tare complete.");
 
+    // Push button setup
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+    Serial.println("[Button] Ready on GPIO 4.");
+
+    // Calibration mode
     if (CALIBRATION_MODE) {
-        Serial.println("[CAL]  Place a known weight and watch the readings.");
-        Serial.println("[CAL]  Tune CALIBRATION_FACTOR until value matches.");
+
+        Serial.println(
+            "[CAL] Place a known weight and watch the readings."
+        );
+
+        Serial.println(
+            "[CAL] Tune CALIBRATION_FACTOR until value matches."
+        );
     }
 
+    // WiFi
     connectWiFi();
-    lastSendTime = millis();
 }
 
 // ----------------------------------------------------------
 // 6. LOOP
 // ----------------------------------------------------------
+
 void loop() {
+
+    // ------------------------------------------------------
     // Auto-reconnect WiFi
+    // ------------------------------------------------------
+
     if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("[WiFi] Lost connection. Reconnecting...");
+
+        Serial.println(
+            "[WiFi] Lost connection. Reconnecting..."
+        );
+
         WiFi.disconnect();
+
         connectWiFi();
     }
 
+    // ------------------------------------------------------
+    // Check HX711
+    // ------------------------------------------------------
+
     if (!scale.is_ready()) {
-        Serial.println("[Scale] HX711 not ready, waiting...");
+
+        Serial.println(
+            "[Scale] HX711 not ready, waiting..."
+        );
+
         delay(200);
+
         return;
     }
 
-    // ---- CALIBRATION MODE ----
+    // ------------------------------------------------------
+    // CALIBRATION MODE
+    // ------------------------------------------------------
+
     if (CALIBRATION_MODE) {
-        long raw   = scale.read_average(5);
-        float kg   = scale.get_units(5);
-        Serial.printf("[CAL] Raw: %ld  | Scaled: %.3f kg  | Factor: %.1f\n",
-                      raw, kg, CALIBRATION_FACTOR);
+
+        long raw = scale.read_average(5);
+
+        float kg = scale.get_units(5);
+
+        Serial.printf(
+            "[CAL] Raw: %ld | Scaled: %.3f kg | Factor: %.1f\n",
+            raw,
+            kg,
+            CALIBRATION_FACTOR
+        );
+
         delay(1000);
+
         return;
     }
 
-    // ---- NORMAL MODE ----
-    if (millis() - lastSendTime >= SEND_INTERVAL_MS) {
-        lastSendTime = millis();
+    // ------------------------------------------------------
+    // NORMAL MODE
+    // ------------------------------------------------------
 
-        // Average 10 samples to reduce noise
-        float weightKg = scale.get_units(10);
-        if (weightKg < 0) weightKg = 0.0;
+    bool buttonState = digitalRead(BUTTON_PIN);
 
-        Serial.printf("[Scale] Current weight: %.2f kg\n", weightKg);
+    // Detect NEW button press
+    if (buttonState == LOW && lastButtonState == HIGH) {
+
+        Serial.println("\n[Button] PRESSED!");
+        Serial.println("[Scale] Taking 5 measurements...");
+
+        // Small delay to allow the scale/load to settle
+        delay(300);
+
+        // --------------------------------------------------
+        // Take 5 measurements and calculate average
+        // --------------------------------------------------
+
+        float total = 0;
+
+        for (int i = 0; i < NUM_SAMPLES; i++) {
+
+            float reading = scale.get_units(1);
+
+            if (reading < 0)
+                reading = 0.0;
+
+            total += reading;
+
+            Serial.printf(
+                "[Scale] Reading %d/%d: %.2f kg\n",
+                i + 1,
+                NUM_SAMPLES,
+                reading
+            );
+
+            delay(100);
+        }
+
+        float weightKg = total / NUM_SAMPLES;
+
+        Serial.println("------------------------------");
+
+        Serial.printf(
+            "[Scale] AVERAGE WEIGHT: %.2f kg\n",
+            weightKg
+        );
+
+        Serial.println("------------------------------");
+
+        // Send ONE averaged measurement
         sendToBackend(weightKg);
+
+        Serial.println(
+            "[Scale] Measurement complete.\n"
+        );
     }
+
+    // Remember current button state
+    lastButtonState = buttonState;
 
     delay(50);
 }
