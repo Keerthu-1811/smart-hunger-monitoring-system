@@ -1541,7 +1541,62 @@ window.clearAuditLog = async function() {
 };
 
 // ==========================================
-// 11. BOOTSTRAP
+// 11. MODULE M2 — LIVE ESP32 SCALE POLLER
+// Polls /api/m2-weight every 2 seconds.
+// When a new reading arrives, auto-fills the M2 weight input
+// and syncs the M3 commodity dropdown.
+// ==========================================
+let lastM2Timestamp = null;
+
+async function pollM2Scale() {
+    try {
+        const shop = activeOperatorShop || "Shop 1 (Central Hub)";
+        const res = await fetch(
+            `http://localhost:3000/api/m2-weight?shop_id=${encodeURIComponent(shop)}`
+        );
+        const data = await res.json();
+
+        if (!data.reading) return;  // no reading yet for this shop
+
+        const { weight, item_name, timestamp } = data.reading;
+
+        // Only update if this is a NEW reading (timestamp changed)
+        if (timestamp === lastM2Timestamp) return;
+        lastM2Timestamp = timestamp;
+
+        // --- Fill the M2 weight input ---
+        const weightInput = document.getElementById("m2WeightInput");
+        if (weightInput) {
+            weightInput.value = weight.toFixed(1);
+
+            // Green flash to signal a live update from hardware
+            weightInput.style.transition = "background 0.2s";
+            weightInput.style.background = "rgba(16, 185, 129, 0.3)";
+            setTimeout(() => { weightInput.style.background = ""; }, 800);
+        }
+
+        // --- Sync the M3 vision dropdown to the detected commodity ---
+        const visionSelect = document.getElementById("m3VisionSelect");
+        if (visionSelect && item_name) {
+            visionSelect.value = item_name;
+        }
+
+        // --- Sync the M1 commodity claim dropdown ---
+        const claimSelect = document.getElementById("dispenseCommoditySelect");
+        if (claimSelect && item_name) {
+            claimSelect.value = item_name;
+            onStationCommodityChange();
+        }
+
+        console.log(`[M2 Live] Scale update: ${item_name} = ${weight} kg`);
+
+    } catch (e) {
+        // Silent — hardware may not be connected
+    }
+}
+
+// ==========================================
+// 12. BOOTSTRAP
 // ==========================================
 switchRoleView('SHOP');
 loadData();
@@ -1549,3 +1604,4 @@ window.lookupBeneficiary("TN-PDS-1001");
 initStation();
 loadAuditTransactions();
 setInterval(loadData, 5000);
+setInterval(pollM2Scale, 2000);  // Poll physical scale every 2 seconds

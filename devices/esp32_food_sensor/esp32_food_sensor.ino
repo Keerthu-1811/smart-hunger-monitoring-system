@@ -11,8 +11,8 @@
 const char* WIFI_SSID     = "OPPOA785G";
 const char* WIFI_PASSWORD = "Alain1811";
 
-// Backend URL
-const char* SERVER_URL = "http://10.118.37.248:3000/api/fooddata";
+// Backend URL — posts to M2 scale endpoint (updates dashboard weight input, NOT inventory)
+const char* SERVER_URL = "http://10.118.37.248:3000/api/m2-weight";
 
 // Shop
 const char* SHOP_ID = "Shop 1 (Central Hub)";

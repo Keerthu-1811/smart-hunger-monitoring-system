@@ -47,6 +47,10 @@ function normalizeCommodity(name) {
     return found || "Rice";
 }
 
+// In-memory store for the latest M2 (physical scale) reading per shop.
+// Keyed by shop_id. Each entry: { weight, item_name, timestamp }
+const latestM2Readings = {};
+
 /**
  * Core Analytics and Matchmaking Calculation Engine
  */
@@ -299,7 +303,36 @@ app.post("/api/fooddata", async (req, res) => {
 });
 
 // ==========================================
-// 2. ANALYTICS & REDISTRIBUTION: GET /api/data
+// 2. M2 SCALE ENDPOINT: POST /api/m2-weight
+// ESP32 posts here on button press.
+// Stores ONLY in memory — does NOT touch inventory.
+// ==========================================
+app.post("/api/m2-weight", (req, res) => {
+    const { device_id, item_name, weight } = req.body || {};
+    if (!device_id || weight === undefined) {
+        return res.status(400).json({ error: "Missing device_id or weight" });
+    }
+    const shop_id = normalizeShop(device_id);
+    const commodity = normalizeCommodity(item_name);
+    latestM2Readings[shop_id] = {
+        weight: Math.max(0, Number(weight)),
+        item_name: commodity,
+        timestamp: new Date().toISOString()
+    };
+    console.log(`[M2] Scale reading received: ${shop_id} | ${commodity} | ${weight} kg`);
+    res.json({ message: "M2 scale reading received", shop_id, item_name: commodity, weight });
+});
+
+// GET /api/m2-weight?shop_id=Shop+1+(Central+Hub)
+// Dashboard polls this every 2 seconds to update the M2 weight input.
+app.get("/api/m2-weight", (req, res) => {
+    const shop_id = normalizeShop(req.query.shop_id || "");
+    const reading = latestM2Readings[shop_id] || null;
+    res.json({ shop_id, reading });
+});
+
+// ==========================================
+// 3. ANALYTICS & REDISTRIBUTION: GET /api/data
 // ==========================================
 app.get("/api/data", async (req, res) => {
     try {
